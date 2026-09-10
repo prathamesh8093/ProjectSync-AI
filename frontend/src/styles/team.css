@@ -1,0 +1,205 @@
+.team-card,
+.team-empty-card,
+.team-header-card,
+.team-members-card,
+.team-add-member-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.team-loading,
+.team-load-error {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.team-load-error {
+  color: var(--danger);
+}
+
+.team-empty-card {
+  text-align: left;
+}
+
+.team-empty-card h2 {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.team-empty-card p {
+  margin: 0 0 20px 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.team-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 360px;
+  margin-top: 16px;
+}
+
+.team-create-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.team-header-card h2 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.team-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.team-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.team-info-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.team-info-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.team-members-card h3,
+.team-add-member-card h3 {
+  margin: 0 0 16px 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.team-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.team-member-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.team-member-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background-color: var(--primary-soft);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.team-member-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.team-member-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.team-member-email {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-member-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.team-member-joined {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.team-add-member-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 360px;
+}
+
+.team-leader-note {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.team-save-success {
+  background-color: var(--success-soft);
+  color: var(--success);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+  .team-card,
+  .team-empty-card,
+  .team-header-card,
+  .team-members-card,
+  .team-add-member-card {
+    padding: 18px;
+  }
+
+  .team-member-row {
+    flex-wrap: wrap;
+  }
+
+  .team-member-meta {
+    width: 100%;
+    justify-content: space-between;
+    padding-left: 52px;
+  }
+
+  .team-create-actions {
+    flex-direction: column;
+  }
+}

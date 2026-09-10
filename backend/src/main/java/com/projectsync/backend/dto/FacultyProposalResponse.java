@@ -1,0 +1,73 @@
+package com.projectsync.backend.dto;
+
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
+public class FacultyProposalResponse {
+
+    private UUID id;
+    private UUID teamId;
+    private String teamName;
+    private String title;
+    private String description;
+    private String objectives;
+    private String technologyStack;
+    private String status;
+    private UUID submittedById;
+    private String submittedByName;
+    private OffsetDateTime submittedAt;
+    private OffsetDateTime updatedAt;
+
+    private String reviewDecision;
+    private String reviewComments;
+    private OffsetDateTime reviewedAt;
+    private String reviewedByName;
+
+    public UUID getId() { return id; }
+    public void setId(UUID id) { this.id = id; }
+
+    public UUID getTeamId() { return teamId; }
+    public void setTeamId(UUID teamId) { this.teamId = teamId; }
+
+    public String getTeamName() { return teamName; }
+    public void setTeamName(String teamName) { this.teamName = teamName; }
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+
+    public String getObjectives() { return objectives; }
+    public void setObjectives(String objectives) { this.objectives = objectives; }
+
+    public String getTechnologyStack() { return technologyStack; }
+    public void setTechnologyStack(String technologyStack) { this.technologyStack = technologyStack; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public UUID getSubmittedById() { return submittedById; }
+    public void setSubmittedById(UUID submittedById) { this.submittedById = submittedById; }
+
+    public String getSubmittedByName() { return submittedByName; }
+    public void setSubmittedByName(String submittedByName) { this.submittedByName = submittedByName; }
+
+    public OffsetDateTime getSubmittedAt() { return submittedAt; }
+    public void setSubmittedAt(OffsetDateTime submittedAt) { this.submittedAt = submittedAt; }
+
+    public OffsetDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(OffsetDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getReviewDecision() { return reviewDecision; }
+    public void setReviewDecision(String reviewDecision) { this.reviewDecision = reviewDecision; }
+
+    public String getReviewComments() { return reviewComments; }
+    public void setReviewComments(String reviewComments) { this.reviewComments = reviewComments; }
+
+    public OffsetDateTime getReviewedAt() { return reviewedAt; }
+    public void setReviewedAt(OffsetDateTime reviewedAt) { this.reviewedAt = reviewedAt; }
+
+    public String getReviewedByName() { return reviewedByName; }
+    public void setReviewedByName(String reviewedByName) { this.reviewedByName = reviewedByName; }
+}

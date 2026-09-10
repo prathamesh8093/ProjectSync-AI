@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary: #3454D1;
+  --primary-hover: #2A44AE;
+  --primary-soft: #EEF1FD;
+  --background: #F7F8FA;
+  --surface: #FFFFFF;
+  --surface-muted: #F1F3F6;
+  --border: #E2E5EA;
+  --text-primary: #1A1D29;
+  --text-secondary: #5B6072;
+  --text-muted: #8A8F9C;
+  --success: #1F9D55;
+  --success-soft: #E8F7EE;
+  --warning: #B76E00;
+  --warning-soft: #FDF3E3;
+  --danger: #D33A3A;
+  --danger-soft: #FBEAEA;
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 1px 3px rgba(16, 24, 40, 0.04);
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --sidebar-bg: #14182B;
+  --sidebar-text: #B7BCD6;
+  --sidebar-text-active: #FFFFFF;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background-color: var(--background);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
