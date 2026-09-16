@@ -18,7 +18,7 @@ const studentNavItems = [
   { label: 'My Profile', icon: UserRound, path: '/student/profile' },
   { label: 'My Team', icon: Users, path: '/student/team' },
   { label: 'Project Proposal', icon: FileText, path: '/student/proposal' },
-  { label: 'Tasks / Projects', icon: ListChecks, path: null },
+  { label: 'Tasks / Projects', icon: ListChecks, path: '/student/projects' },
 ]
 
 function StudentTeam() {

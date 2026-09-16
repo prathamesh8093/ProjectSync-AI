@@ -7,7 +7,9 @@ import StudentProfile from './pages/StudentProfile.jsx'
 import FacultyProfile from './pages/FacultyProfile.jsx'
 import StudentTeam from './pages/StudentTeam.jsx'
 import StudentProjectProposal from './pages/StudentProjectProposal.jsx'
+import StudentProjectWorkspace from './pages/StudentProjectWorkspace.jsx'
 import FacultyProjectProposals from './pages/FacultyProjectProposals.jsx'
+import FacultyProjectMonitoring from './pages/FacultyProjectMonitoring.jsx'
 import ProtectedRoute from './routes/ProtectedRoute.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 
@@ -30,8 +32,11 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<RootRedirect />} />
+
         <Route path="/login" element={<Login />} />
+
         <Route path="/register" element={<Register />} />
+
         <Route
           path="/student/dashboard"
           element={
@@ -40,6 +45,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/student/profile"
           element={
@@ -48,6 +54,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/student/team"
           element={
@@ -56,6 +63,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/student/proposal"
           element={
@@ -64,6 +72,16 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/student/projects"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT']}>
+              <StudentProjectWorkspace />
+            </ProtectedRoute>
+          }
+        />
+
         <Route
           path="/faculty/dashboard"
           element={
@@ -72,6 +90,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/faculty/profile"
           element={
@@ -80,11 +99,21 @@ function App() {
             </ProtectedRoute>
           }
         />
+
         <Route
           path="/faculty/proposals"
           element={
             <ProtectedRoute allowedRoles={['FACULTY']}>
               <FacultyProjectProposals />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/faculty/projects"
+          element={
+            <ProtectedRoute allowedRoles={['FACULTY']}>
+              <FacultyProjectMonitoring />
             </ProtectedRoute>
           }
         />

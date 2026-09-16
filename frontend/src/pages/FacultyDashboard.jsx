@@ -1,5 +1,11 @@
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, UserRound, Users, FileText, ClipboardCheck } from 'lucide-react'
+import {
+  LayoutDashboard,
+  UserRound,
+  Users,
+  FileText,
+  ClipboardCheck,
+} from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
 import '../styles/dashboard.css'
 
@@ -8,7 +14,11 @@ const facultyNavItems = [
   { label: 'Faculty Profile', icon: UserRound, path: '/faculty/profile' },
   { label: 'Student Teams', icon: Users, path: null },
   { label: 'Project Proposals', icon: FileText, path: '/faculty/proposals' },
-  { label: 'Project Monitoring', icon: ClipboardCheck, path: null },
+  {
+    label: 'Project Monitoring',
+    icon: ClipboardCheck,
+    path: '/faculty/projects',
+  },
 ]
 
 function FacultyDashboard() {
@@ -24,18 +34,24 @@ function FacultyDashboard() {
           <h2>Faculty Profile</h2>
           <p>Coming soon.</p>
         </div>
+
         <div className="dashboard-card">
           <h2>Student Teams</h2>
           <p>Coming soon.</p>
         </div>
+
         <Link to="/faculty/proposals" className="dashboard-card">
           <h2>Project Proposals</h2>
           <p>Review and manage submitted project proposals.</p>
         </Link>
-        <div className="dashboard-card">
+
+        <Link to="/faculty/projects" className="dashboard-card">
           <h2>Project Monitoring</h2>
-          <p>Coming soon.</p>
-        </div>
+          <p>
+            Monitor approved student projects, task progress, and project
+            status.
+          </p>
+        </Link>
       </div>
     </DashboardLayout>
   )

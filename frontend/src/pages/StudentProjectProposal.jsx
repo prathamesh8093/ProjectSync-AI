@@ -20,10 +20,15 @@ const studentNavItems = [
   { label: 'My Profile', icon: UserRound, path: '/student/profile' },
   { label: 'My Team', icon: Users, path: '/student/team' },
   { label: 'Project Proposal', icon: FileText, path: '/student/proposal' },
-  { label: 'Tasks / Projects', icon: ListChecks, path: null },
+  { label: 'Tasks / Projects', icon: ListChecks, path: '/student/projects' },
 ]
 
-const emptyForm = { title: '', description: '', objectives: '', technologyStack: '' }
+const emptyForm = {
+  title: '',
+  description: '',
+  objectives: '',
+  technologyStack: '',
+}
 
 const statusTone = {
   DRAFT: 'neutral',
@@ -43,6 +48,7 @@ function toFormData(proposal) {
 
 function formatDateTime(value) {
   if (!value) return ''
+
   return new Date(value).toLocaleString(undefined, {
     day: '2-digit',
     month: 'short',
@@ -83,10 +89,19 @@ function StudentProjectProposal() {
     const loadLeaderStatus = async () => {
       try {
         const teamResponse = await getMyTeam()
-        const membersResponse = await getTeamMembers(teamResponse.data.id)
+        const membersResponse = await getTeamMembers(
+          teamResponse.data.id
+        )
+
         if (!isMounted) return
-        const currentMember = membersResponse.data.find((m) => m.email === user.email)
-        setIsLeader(currentMember?.teamRole === 'LEADER')
+
+        const currentMember = membersResponse.data.find(
+          (m) => m.email === user.email
+        )
+
+        setIsLeader(
+          currentMember?.teamRole === 'LEADER'
+        )
       } catch {
         if (!isMounted) return
         setIsLeader(false)
@@ -96,14 +111,22 @@ function StudentProjectProposal() {
     const loadProposal = async () => {
       try {
         const response = await getMyProposal()
+
         if (!isMounted) return
+
         setProposal(response.data)
       } catch (err) {
         if (!isMounted) return
-        if (err.response && err.response.status === 404) {
+
+        if (
+          err.response &&
+          err.response.status === 404
+        ) {
           setProposal(null)
         } else {
-          setLoadError('Unable to load your proposal right now. Please try again later.')
+          setLoadError(
+            'Unable to load your proposal right now. Please try again later.'
+          )
         }
       } finally {
         if (isMounted) setLoading(false)
@@ -112,6 +135,7 @@ function StudentProjectProposal() {
 
     loadLeaderStatus()
     loadProposal()
+
     return () => {
       isMounted = false
     }
@@ -123,11 +147,13 @@ function StudentProjectProposal() {
     if (!data.title.trim()) {
       newErrors.title = 'Project title is required.'
     } else if (data.title.trim().length > 200) {
-      newErrors.title = 'Title must be 200 characters or fewer.'
+      newErrors.title =
+        'Title must be 200 characters or fewer.'
     }
 
     if (!data.description.trim()) {
-      newErrors.description = 'Project description is required.'
+      newErrors.description =
+        'Project description is required.'
     }
 
     return newErrors
@@ -137,11 +163,15 @@ function StudentProjectProposal() {
     title: data.title.trim(),
     description: data.description.trim(),
     objectives: data.objectives.trim() || null,
-    technologyStack: data.technologyStack.trim() || null,
+    technologyStack:
+      data.technologyStack.trim() || null,
   })
 
   const handleCreateChange = (e) => {
-    setCreateFormData({ ...createFormData, [e.target.name]: e.target.value })
+    setCreateFormData({
+      ...createFormData,
+      [e.target.name]: e.target.value,
+    })
   }
 
   const handleCreateSubmit = async (e) => {
@@ -150,26 +180,58 @@ function StudentProjectProposal() {
 
     const newErrors = validate(createFormData)
     setCreateErrors(newErrors)
+
     if (Object.keys(newErrors).length > 0) return
 
     setCreating(true)
+
     try {
-      const response = await createProposal(buildPayload(createFormData))
+      const response = await createProposal(
+        buildPayload(createFormData)
+      )
+
       setProposal(response.data)
       setShowCreateForm(false)
       setCreateFormData(emptyForm)
       setCreateSuccess(true)
     } catch (err) {
-      if (err.response && err.response.status === 409) {
-        setCreateErrors({ title: 'Your team already has a proposal.' })
-      } else if (err.response && err.response.status === 403) {
-        setCreateErrors({ title: 'Only the team leader can create a proposal.' })
-      } else if (err.response && err.response.status === 404) {
-        setCreateErrors({ title: 'You need to be part of a team before creating a proposal.' })
-      } else if (err.response && err.response.status === 400) {
-        setCreateErrors({ title: 'Please check the form and try again.' })
+      if (
+        err.response &&
+        err.response.status === 409
+      ) {
+        setCreateErrors({
+          title:
+            'Your team already has a proposal.',
+        })
+      } else if (
+        err.response &&
+        err.response.status === 403
+      ) {
+        setCreateErrors({
+          title:
+            'Only the team leader can create a proposal.',
+        })
+      } else if (
+        err.response &&
+        err.response.status === 404
+      ) {
+        setCreateErrors({
+          title:
+            'You need to be part of a team before creating a proposal.',
+        })
+      } else if (
+        err.response &&
+        err.response.status === 400
+      ) {
+        setCreateErrors({
+          title:
+            'Please check the form and try again.',
+        })
       } else {
-        setCreateErrors({ title: 'Something went wrong while creating the proposal. Please try again.' })
+        setCreateErrors({
+          title:
+            'Something went wrong while creating the proposal. Please try again.',
+        })
       }
     } finally {
       setCreating(false)
@@ -191,7 +253,10 @@ function StudentProjectProposal() {
   }
 
   const handleEditChange = (e) => {
-    setEditFormData({ ...editFormData, [e.target.name]: e.target.value })
+    setEditFormData({
+      ...editFormData,
+      [e.target.name]: e.target.value,
+    })
   }
 
   const handleEditSubmit = async (e) => {
@@ -201,23 +266,46 @@ function StudentProjectProposal() {
 
     const newErrors = validate(editFormData)
     setEditErrors(newErrors)
+
     if (Object.keys(newErrors).length > 0) return
 
     setSaving(true)
+
     try {
-      const response = await updateProposal(proposal.id, buildPayload(editFormData))
+      const response = await updateProposal(
+        proposal.id,
+        buildPayload(editFormData)
+      )
+
       setProposal(response.data)
       setEditing(false)
       setSaveSuccess(true)
     } catch (err) {
-      if (err.response && err.response.status === 409) {
-        setSaveError('This proposal can no longer be edited.')
-      } else if (err.response && err.response.status === 403) {
-        setSaveError('Only the team leader can edit this proposal.')
-      } else if (err.response && err.response.status === 400) {
-        setSaveError('Please check the highlighted fields and try again.')
+      if (
+        err.response &&
+        err.response.status === 409
+      ) {
+        setSaveError(
+          'This proposal can no longer be edited.'
+        )
+      } else if (
+        err.response &&
+        err.response.status === 403
+      ) {
+        setSaveError(
+          'Only the team leader can edit this proposal.'
+        )
+      } else if (
+        err.response &&
+        err.response.status === 400
+      ) {
+        setSaveError(
+          'Please check the highlighted fields and try again.'
+        )
       } else {
-        setSaveError('Something went wrong while saving. Please try again.')
+        setSaveError(
+          'Something went wrong while saving. Please try again.'
+        )
       }
     } finally {
       setSaving(false)
@@ -228,17 +316,33 @@ function StudentProjectProposal() {
     setSubmitError('')
     setSubmitSuccess(false)
     setSubmitting(true)
+
     try {
-      const response = await submitProposal(proposal.id)
+      const response = await submitProposal(
+        proposal.id
+      )
+
       setProposal(response.data)
       setSubmitSuccess(true)
     } catch (err) {
-      if (err.response && err.response.status === 409) {
-        setSubmitError('This proposal has already been submitted or reviewed.')
-      } else if (err.response && err.response.status === 403) {
-        setSubmitError('Only the team leader can submit this proposal.')
+      if (
+        err.response &&
+        err.response.status === 409
+      ) {
+        setSubmitError(
+          'This proposal has already been submitted or reviewed.'
+        )
+      } else if (
+        err.response &&
+        err.response.status === 403
+      ) {
+        setSubmitError(
+          'Only the team leader can submit this proposal.'
+        )
       } else {
-        setSubmitError('Something went wrong while submitting. Please try again.')
+        setSubmitError(
+          'Something went wrong while submitting. Please try again.'
+        )
       }
     } finally {
       setSubmitting(false)
@@ -247,25 +351,39 @@ function StudentProjectProposal() {
 
   const isDraft = proposal?.status === 'DRAFT'
   const canManage = isDraft && isLeader
-  const hasReview = Boolean(proposal?.reviewDecision)
-  const isAwaitingReview = proposal?.status === 'SUBMITTED' && !hasReview
+  const hasReview = Boolean(
+    proposal?.reviewDecision
+  )
+  const isAwaitingReview =
+    proposal?.status === 'SUBMITTED' &&
+    !hasReview
 
   return (
     <DashboardLayout navItems={studentNavItems}>
-      <h1 className="content-title">Project Proposal</h1>
-      <p className="content-subtitle">Manage your team's project proposal.</p>
+      <h1 className="content-title">
+        Project Proposal
+      </h1>
+
+      <p className="content-subtitle">
+        Manage your team's project proposal.
+      </p>
 
       {loading ? (
         <div className="proposal-card">
-          <p className="proposal-loading">Loading your proposal...</p>
+          <p className="proposal-loading">
+            Loading your proposal...
+          </p>
         </div>
       ) : loadError ? (
         <div className="proposal-card">
-          <p className="proposal-load-error">{loadError}</p>
+          <p className="proposal-load-error">
+            {loadError}
+          </p>
         </div>
       ) : !proposal ? (
         <div className="proposal-empty-card">
           <h2>No proposal yet</h2>
+
           <p>
             {isLeader
               ? "Create your team's project proposal to get started."
@@ -273,14 +391,26 @@ function StudentProjectProposal() {
           </p>
 
           {createSuccess && (
-            <div className="proposal-save-success">Proposal created successfully.</div>
+            <div className="proposal-save-success">
+              Proposal created successfully.
+            </div>
           )}
 
-          {isLeader && (
-            !showCreateForm ? (
-              <Button onClick={() => setShowCreateForm(true)}>Create Proposal</Button>
+          {isLeader &&
+            (!showCreateForm ? (
+              <Button
+                onClick={() =>
+                  setShowCreateForm(true)
+                }
+              >
+                Create Proposal
+              </Button>
             ) : (
-              <form className="proposal-form" onSubmit={handleCreateSubmit} noValidate>
+              <form
+                className="proposal-form"
+                onSubmit={handleCreateSubmit}
+                noValidate
+              >
                 <Input
                   id="title"
                   name="title"
@@ -290,36 +420,53 @@ function StudentProjectProposal() {
                   onChange={handleCreateChange}
                   error={createErrors.title}
                 />
+
                 <Textarea
                   id="description"
                   name="description"
                   label="Project Description"
                   placeholder="Describe what your project does..."
-                  value={createFormData.description}
+                  value={
+                    createFormData.description
+                  }
                   onChange={handleCreateChange}
-                  error={createErrors.description}
+                  error={
+                    createErrors.description
+                  }
                 />
+
                 <Textarea
                   id="objectives"
                   name="objectives"
                   label="Objectives"
                   placeholder="What are the goals of this project?"
-                  value={createFormData.objectives}
+                  value={
+                    createFormData.objectives
+                  }
                   onChange={handleCreateChange}
                 />
+
                 <Input
                   id="technologyStack"
                   name="technologyStack"
                   label="Technology Stack"
                   placeholder="e.g. React, Spring Boot, PostgreSQL"
-                  value={createFormData.technologyStack}
+                  value={
+                    createFormData.technologyStack
+                  }
                   onChange={handleCreateChange}
                 />
 
                 <div className="proposal-form-actions">
-                  <Button type="submit" loading={creating}>
-                    {creating ? 'Creating...' : 'Create Proposal'}
+                  <Button
+                    type="submit"
+                    loading={creating}
+                  >
+                    {creating
+                      ? 'Creating...'
+                      : 'Create Proposal'}
                   </Button>
+
                   <Button
                     type="button"
                     variant="secondary"
@@ -332,26 +479,42 @@ function StudentProjectProposal() {
                   </Button>
                 </div>
               </form>
-            )
-          )}
+            ))}
         </div>
       ) : (
         <>
           {saveSuccess && (
-            <div className="proposal-save-success">Proposal updated successfully.</div>
+            <div className="proposal-save-success">
+              Proposal updated successfully.
+            </div>
           )}
+
           {submitSuccess && (
-            <div className="proposal-save-success">Proposal submitted successfully.</div>
+            <div className="proposal-save-success">
+              Proposal submitted successfully.
+            </div>
           )}
 
           <div className="proposal-header-card">
             <div className="proposal-header-top">
               <h2>{proposal.title}</h2>
-              <Badge tone={statusTone[proposal.status] || 'neutral'}>{proposal.status}</Badge>
+
+              <Badge
+                tone={
+                  statusTone[proposal.status] ||
+                  'neutral'
+                }
+              >
+                {proposal.status}
+              </Badge>
             </div>
+
             {proposal.submittedAt && (
               <p className="proposal-meta">
-                Submitted {new Date(proposal.submittedAt).toLocaleDateString(undefined, {
+                Submitted{' '}
+                {new Date(
+                  proposal.submittedAt
+                ).toLocaleDateString(undefined, {
                   year: 'numeric',
                   month: 'short',
                   day: 'numeric',
@@ -364,42 +527,77 @@ function StudentProjectProposal() {
             <>
               <div className="proposal-form-card">
                 <div className="proposal-field">
-                  <span className="proposal-field-label">Project Description</span>
-                  <p className="proposal-field-value">{proposal.description}</p>
-                </div>
-                <div className="proposal-field">
-                  <span className="proposal-field-label">Objectives</span>
+                  <span className="proposal-field-label">
+                    Project Description
+                  </span>
+
                   <p className="proposal-field-value">
-                    {proposal.objectives || 'Not provided.'}
-                  </p>
-                </div>
-                <div className="proposal-field">
-                  <span className="proposal-field-label">Technology Stack</span>
-                  <p className="proposal-field-value">
-                    {proposal.technologyStack || 'Not provided.'}
+                    {proposal.description}
                   </p>
                 </div>
 
-                {submitError && <div className="proposal-save-error">{submitError}</div>}
+                <div className="proposal-field">
+                  <span className="proposal-field-label">
+                    Objectives
+                  </span>
+
+                  <p className="proposal-field-value">
+                    {proposal.objectives ||
+                      'Not provided.'}
+                  </p>
+                </div>
+
+                <div className="proposal-field">
+                  <span className="proposal-field-label">
+                    Technology Stack
+                  </span>
+
+                  <p className="proposal-field-value">
+                    {proposal.technologyStack ||
+                      'Not provided.'}
+                  </p>
+                </div>
+
+                {submitError && (
+                  <div className="proposal-save-error">
+                    {submitError}
+                  </div>
+                )}
 
                 {canManage && (
                   <div className="proposal-form-actions">
-                    <Button onClick={startEditing}>Edit</Button>
-                    <Button variant="secondary" onClick={handleSubmitProposal} loading={submitting}>
-                      {submitting ? 'Submitting...' : 'Submit Proposal'}
+                    <Button
+                      onClick={startEditing}
+                    >
+                      Edit
+                    </Button>
+
+                    <Button
+                      variant="secondary"
+                      onClick={
+                        handleSubmitProposal
+                      }
+                      loading={submitting}
+                    >
+                      {submitting
+                        ? 'Submitting...'
+                        : 'Submit Proposal'}
                     </Button>
                   </div>
                 )}
 
                 {!isDraft && !hasReview && (
                   <p className="proposal-readonly-note">
-                    This proposal is {proposal.status.toLowerCase()} and can no longer be edited.
+                    This proposal is{' '}
+                    {proposal.status.toLowerCase()}{' '}
+                    and can no longer be edited.
                   </p>
                 )}
 
                 {isDraft && !isLeader && (
                   <p className="proposal-readonly-note">
-                    Only the team leader can edit or submit this proposal.
+                    Only the team leader can edit or
+                    submit this proposal.
                   </p>
                 )}
               </div>
@@ -407,7 +605,10 @@ function StudentProjectProposal() {
               {isAwaitingReview && (
                 <div className="proposal-review-card">
                   <h3>Faculty Review</h3>
-                  <p className="proposal-review-pending">Awaiting Faculty Review</p>
+
+                  <p className="proposal-review-pending">
+                    Awaiting Faculty Review
+                  </p>
                 </div>
               )}
 
@@ -416,7 +617,10 @@ function StudentProjectProposal() {
                   <h3>Faculty Review</h3>
 
                   <div className="proposal-field">
-                    <span className="proposal-field-label">Decision</span>
+                    <span className="proposal-field-label">
+                      Decision
+                    </span>
+
                     <p
                       className={`proposal-review-decision proposal-review-decision-${proposal.reviewDecision.toLowerCase()}`}
                     >
@@ -425,30 +629,47 @@ function StudentProjectProposal() {
                   </div>
 
                   <div className="proposal-field">
-                    <span className="proposal-field-label">Comments</span>
+                    <span className="proposal-field-label">
+                      Comments
+                    </span>
+
                     <p className="proposal-field-value">
-                      {proposal.reviewComments || 'No comments provided.'}
+                      {proposal.reviewComments ||
+                        'No comments provided.'}
                     </p>
                   </div>
 
                   <div className="proposal-field">
-                    <span className="proposal-field-label">Reviewed By</span>
+                    <span className="proposal-field-label">
+                      Reviewed By
+                    </span>
+
                     <p className="proposal-field-value">
-                      {proposal.reviewedByName || 'Unknown'}
+                      {proposal.reviewedByName ||
+                        'Unknown'}
                     </p>
                   </div>
 
                   <div className="proposal-field">
-                    <span className="proposal-field-label">Reviewed At</span>
+                    <span className="proposal-field-label">
+                      Reviewed At
+                    </span>
+
                     <p className="proposal-field-value">
-                      {formatDateTime(proposal.reviewedAt)}
+                      {formatDateTime(
+                        proposal.reviewedAt
+                      )}
                     </p>
                   </div>
                 </div>
               )}
             </>
           ) : (
-            <form className="proposal-form-card" onSubmit={handleEditSubmit} noValidate>
+            <form
+              className="proposal-form-card"
+              onSubmit={handleEditSubmit}
+              noValidate
+            >
               <Input
                 id="editTitle"
                 name="title"
@@ -457,36 +678,61 @@ function StudentProjectProposal() {
                 onChange={handleEditChange}
                 error={editErrors.title}
               />
+
               <Textarea
                 id="editDescription"
                 name="description"
                 label="Project Description"
-                value={editFormData.description}
+                value={
+                  editFormData.description
+                }
                 onChange={handleEditChange}
-                error={editErrors.description}
+                error={
+                  editErrors.description
+                }
               />
+
               <Textarea
                 id="editObjectives"
                 name="objectives"
                 label="Objectives"
-                value={editFormData.objectives}
+                value={
+                  editFormData.objectives
+                }
                 onChange={handleEditChange}
               />
+
               <Input
                 id="editTechnologyStack"
                 name="technologyStack"
                 label="Technology Stack"
-                value={editFormData.technologyStack}
+                value={
+                  editFormData.technologyStack
+                }
                 onChange={handleEditChange}
               />
 
-              {saveError && <div className="proposal-save-error">{saveError}</div>}
+              {saveError && (
+                <div className="proposal-save-error">
+                  {saveError}
+                </div>
+              )}
 
               <div className="proposal-form-actions">
-                <Button type="submit" loading={saving}>
-                  {saving ? 'Saving...' : 'Save Changes'}
+                <Button
+                  type="submit"
+                  loading={saving}
+                >
+                  {saving
+                    ? 'Saving...'
+                    : 'Save Changes'}
                 </Button>
-                <Button type="button" variant="secondary" onClick={cancelEditing}>
+
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={cancelEditing}
+                >
                   Cancel
                 </Button>
               </div>
