@@ -30,6 +30,12 @@ import {
   getTaskHistory,
 } from '../services/taskHistoryService.js'
 import {
+  createTaskComment,
+  getTaskComments,
+  updateTaskComment,
+  deleteTaskComment,
+} from '../services/taskCommentService.js'
+import {
   getMyProjectProgress,
 } from '../services/projectProgressService.js'
 import {
@@ -46,6 +52,15 @@ function StudentProjectWorkspace() {
   const [documents, setDocuments] = useState([])
   const [selectedHistoryTaskId, setSelectedHistoryTaskId] = useState(null)
   const [taskHistory, setTaskHistory] = useState([])
+  const [selectedCommentTaskId, setSelectedCommentTaskId] = useState(null)
+  const [taskComments, setTaskComments] = useState([])
+  const [commentLoading, setCommentLoading] = useState(false)
+  const [commentSaving, setCommentSaving] = useState(false)
+  const [editingCommentId, setEditingCommentId] = useState(null)
+  const [commentForm, setCommentForm] = useState({
+    content: '',
+  })
+  const [showCommentForm, setShowCommentForm] = useState(false)
 
   const [team, setTeam] = useState(null)
   const [teamMembers, setTeamMembers] = useState([])
@@ -568,6 +583,225 @@ function StudentProjectWorkspace() {
       )
     } finally {
       setHistoryLoading(false)
+    }
+  }
+
+  const handleCommentFormChange = (event) => {
+    const { name, value } = event.target
+
+    setCommentForm((previous) => ({
+      ...previous,
+      [name]: value,
+    }))
+  }
+
+  const handleViewTaskComments = async (task) => {
+    if (!task?.id) {
+      return
+    }
+
+    if (selectedCommentTaskId === task.id) {
+      setSelectedCommentTaskId(null)
+      setTaskComments([])
+      setEditingCommentId(null)
+      setCommentForm({ content: '' })
+      setShowCommentForm(false)
+      return
+    }
+
+    setCommentLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await getTaskComments(task.id)
+      setSelectedCommentTaskId(task.id)
+      setTaskComments(response.data || [])
+      setEditingCommentId(null)
+      setCommentForm({ content: '' })
+      setShowCommentForm(false)
+    } catch (requestError) {
+      console.error(requestError)
+
+      setError(
+        requestError.response?.data ||
+          'Unable to load task comments.'
+      )
+    } finally {
+      setCommentLoading(false)
+    }
+  }
+
+  const handleStartCommentEdit = (comment) => {
+    if (!comment?.id) {
+      return
+    }
+
+    if (
+      comment.userEmail &&
+      comment.userEmail !== user?.email
+    ) {
+      setError('You can only edit your own comments.')
+      return
+    }
+
+    setEditingCommentId(comment.id)
+    setCommentForm({
+      content: comment.content || '',
+    })
+    setShowCommentForm(true)
+    setError('')
+    setSuccess('')
+  }
+
+  const handleCancelCommentEdit = () => {
+    setEditingCommentId(null)
+    setCommentForm({ content: '' })
+    setShowCommentForm(false)
+  }
+
+  const handleCreateComment = async (event) => {
+    event.preventDefault()
+
+    if (!selectedCommentTaskId) {
+      return
+    }
+
+    if (!commentForm.content.trim()) {
+      setError('Comment content is required.')
+      return
+    }
+
+    setCommentSaving(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await createTaskComment({
+        taskId: selectedCommentTaskId,
+        content: commentForm.content.trim(),
+      })
+
+      setTaskComments((previous) => [
+        ...previous,
+        response.data,
+      ])
+      setCommentForm({ content: '' })
+      setShowCommentForm(false)
+      setSuccess('Task comment added successfully.')
+    } catch (requestError) {
+      console.error(requestError)
+
+      setError(
+        requestError.response?.data ||
+          'Unable to add the task comment.'
+      )
+    } finally {
+      setCommentSaving(false)
+    }
+  }
+
+  const handleUpdateComment = async (event) => {
+    event.preventDefault()
+
+    if (!editingCommentId) {
+      return
+    }
+
+    if (!commentForm.content.trim()) {
+      setError('Comment content is required.')
+      return
+    }
+
+    setCommentSaving(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await updateTaskComment(
+        editingCommentId,
+        {
+          taskId: selectedCommentTaskId,
+          content: commentForm.content.trim(),
+        }
+      )
+
+      setTaskComments((previous) =>
+        previous.map((comment) =>
+          comment.id === editingCommentId
+            ? response.data
+            : comment
+        )
+      )
+
+      setEditingCommentId(null)
+      setCommentForm({ content: '' })
+      setShowCommentForm(false)
+      setSuccess('Task comment updated successfully.')
+    } catch (requestError) {
+      console.error(requestError)
+
+      setError(
+        requestError.response?.data ||
+          'Unable to update the task comment.'
+      )
+    } finally {
+      setCommentSaving(false)
+    }
+  }
+
+  const handleDeleteComment = async (commentId) => {
+    if (!commentId) {
+      return
+    }
+
+    const comment = taskComments.find(
+      (item) => item.id === commentId
+    )
+
+    if (
+      comment?.userEmail &&
+      comment.userEmail !== user?.email
+    ) {
+      setError('You can only delete your own comments.')
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this task comment?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setCommentSaving(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      await deleteTaskComment(commentId)
+
+      setTaskComments((previous) =>
+        previous.filter(
+          (commentItem) => commentItem.id !== commentId
+        )
+      )
+
+      if (editingCommentId === commentId) {
+        handleCancelCommentEdit()
+      }
+
+      setSuccess('Task comment deleted successfully.')
+    } catch (requestError) {
+      console.error(requestError)
+
+      setError(
+        requestError.response?.data ||
+          'Unable to delete the task comment.'
+      )
+    } finally {
+      setCommentSaving(false)
     }
   }
 
@@ -1690,7 +1924,10 @@ function StudentProjectWorkspace() {
                                   <button
                                     type="button"
                                     className="workspace-secondary-button"
-                                    disabled={historyLoading}
+                                    disabled={
+                                      historyLoading ||
+                                      commentLoading
+                                    }
                                     onClick={() =>
                                       handleViewTaskHistory(task)
                                     }
@@ -1699,7 +1936,337 @@ function StudentProjectWorkspace() {
                                       ? 'Hide History'
                                       : 'View History'}
                                   </button>
+
+                                  <button
+                                    type="button"
+                                    className="workspace-secondary-button"
+                                    disabled={
+                                      historyLoading ||
+                                      commentLoading
+                                    }
+                                    onClick={() =>
+                                      handleViewTaskComments(task)
+                                    }
+                                  >
+                                    {selectedCommentTaskId === task.id
+                                      ? 'Hide Comments'
+                                      : 'View Comments'}
+                                  </button>
+
                                 </div>
+
+                                {selectedHistoryTaskId === task.id && (
+              <section className="workspace-card">
+                <div className="workspace-card-header">
+                  <div>
+                    <span className="workspace-label">
+                      Collaboration
+                    </span>
+
+                    <h3>Task History</h3>
+
+                    <p>
+                      Task: <strong>{task.title}</strong>
+                    </p>
+
+                    <p>
+                      View the recorded changes for this task.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="workspace-secondary-button"
+                    onClick={() => {
+                      setSelectedHistoryTaskId(null)
+                      setTaskHistory([])
+                    }}
+                  >
+                    Close
+                  </button>
+                </div>
+
+                {historyLoading ? (
+                  <div className="workspace-loading">
+                    Loading task history...
+                  </div>
+                ) : taskHistory.length === 0 ? (
+                  <div className="workspace-empty-state">
+                    <h3>No history yet</h3>
+                    <p>
+                      No changes have been recorded for this task yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="sprint-list">
+                    {taskHistory.map((history) => (
+                      <article
+                        key={history.id}
+                        className="sprint-card"
+                      >
+                        <div className="sprint-card-header">
+                          <div>
+                            <h3>{history.actionType}</h3>
+                            <span className="workspace-label">
+                              {history.userName ||
+                                history.userEmail ||
+                                'Unknown user'}
+                            </span>
+                          </div>
+
+                          <span className="workspace-label">
+                            {formatDateTime(history.createdAt)}
+                          </span>
+                        </div>
+
+                        <p className="workspace-description">
+                          {history.description}
+                        </p>
+
+                        {(history.oldValue != null ||
+                          history.newValue != null) && (
+                          <div className="workspace-details-grid">
+                            <div>
+                              <span className="workspace-label">
+                                Previous Value
+                              </span>
+                              <span className="workspace-value">
+                                {history.oldValue ?? '—'}
+                              </span>
+                            </div>
+
+                            <div>
+                              <span className="workspace-label">
+                                New Value
+                              </span>
+                              <span className="workspace-value">
+                                {history.newValue ?? '—'}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
+                                {selectedCommentTaskId === task.id && (
+                                  <div className="workspace-card">
+                                    <div className="workspace-card-header">
+                                      <div>
+                                        <span className="workspace-label">
+                                          Collaboration
+                                        </span>
+
+                                        <h3>
+                                          Task Comments
+                                          {taskComments.length > 0
+                                            ? ` (${taskComments.length})`
+                                            : ''}
+                                        </h3>
+
+                                        <p>
+                                          Task:{' '}
+                                          <strong>{task.title}</strong>
+                                        </p>
+
+                                        <p>
+                                          Discuss this task with your
+                                          project team.
+                                        </p>
+                                      </div>
+
+                                      <button
+                                        type="button"
+                                        className="workspace-secondary-button"
+                                        disabled={commentSaving}
+                                        onClick={() => {
+                                          if (showCommentForm) {
+                                            setEditingCommentId(null)
+                                            setCommentForm({ content: '' })
+                                          }
+                                          setShowCommentForm(
+                                            (previous) => !previous
+                                          )
+                                        }}
+                                      >
+                                        {showCommentForm
+                                          ? 'Cancel Comment'
+                                          : 'Add Comment'}
+                                      </button>
+                                    </div>
+
+                                    {showCommentForm && (
+                                      <form
+                                        className="workspace-form"
+                                        onSubmit={
+                                          editingCommentId
+                                            ? handleUpdateComment
+                                            : handleCreateComment
+                                        }
+                                      >
+                                        <div className="workspace-form-group">
+                                          <label htmlFor="taskCommentContent">
+                                            {editingCommentId
+                                              ? 'Edit Comment'
+                                              : 'Add Comment'}
+                                          </label>
+
+                                          <textarea
+                                            id="taskCommentContent"
+                                            name="content"
+                                            value={commentForm.content}
+                                            onChange={handleCommentFormChange}
+                                            placeholder="Write a comment about this task..."
+                                            rows="4"
+                                            maxLength={5000}
+                                            required
+                                          />
+
+                                          <div className="workspace-help-text">
+                                            {commentForm.content.length}/5000
+                                            characters
+                                          </div>
+                                        </div>
+
+                                        <div className="workspace-button-row">
+                                          <button
+                                            type="submit"
+                                            className="workspace-primary-button"
+                                            disabled={commentSaving}
+                                          >
+                                            {commentSaving
+                                              ? 'Saving...'
+                                              : editingCommentId
+                                                ? 'Update Comment'
+                                                : 'Post Comment'}
+                                          </button>
+
+                                          {editingCommentId && (
+                                            <button
+                                              type="button"
+                                              className="workspace-secondary-button"
+                                              disabled={commentSaving}
+                                              onClick={
+                                                handleCancelCommentEdit
+                                              }
+                                            >
+                                              Cancel Edit
+                                            </button>
+                                          )}
+                                        </div>
+                                      </form>
+                                    )}
+
+                                    {commentLoading ? (
+                                      <div className="workspace-loading">
+                                        Loading comments for this task...
+                                      </div>
+                                    ) : taskComments.length === 0 ? (
+                                      <div className="workspace-empty-state">
+                                        <h3>No comments yet</h3>
+                                        <p>
+                                          Click <strong>Add Comment</strong>{' '}
+                                          to start a discussion about{' '}
+                                          <strong>{task.title}</strong>.
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <div className="sprint-list">
+                                        {taskComments.map((comment) => {
+                                          const isOwnComment =
+                                            !comment.userEmail ||
+                                            comment.userEmail === user?.email
+
+                                          return (
+                                            <article
+                                              key={comment.id}
+                                              className="sprint-card"
+                                            >
+                                              <div className="sprint-card-header">
+                                                <div>
+                                                  <span className="workspace-label">
+                                                    Comment by
+                                                  </span>
+
+                                                  <h4>
+                                                    {comment.userName ||
+                                                      comment.userEmail ||
+                                                      'Team member'}
+                                                  </h4>
+
+                                                  <span className="workspace-label">
+                                                    {comment.userEmail ||
+                                                      'Project team member'}
+                                                  </span>
+                                                </div>
+
+                                                <span className="workspace-label">
+                                                  {formatDateTime(
+                                                    comment.updatedAt ||
+                                                      comment.createdAt
+                                                  )}
+                                                </span>
+                                              </div>
+
+                                              <div className="workspace-meta">
+                                                <span className="workspace-label">
+                                                  Task
+                                                </span>
+
+                                                <span className="workspace-value">
+                                                  {task.title}
+                                                </span>
+                                              </div>
+
+                                              <p
+                                                className="workspace-description"
+                                                style={{
+                                                  whiteSpace: 'pre-wrap',
+                                                }}
+                                              >
+                                                {comment.content}
+                                              </p>
+
+                                              {isOwnComment && (
+                                                <div className="workspace-button-row">
+                                                  <button
+                                                    type="button"
+                                                    className="workspace-secondary-button"
+                                                    disabled={commentSaving}
+                                                    onClick={() =>
+                                                      handleStartCommentEdit(
+                                                        comment
+                                                      )
+                                                    }
+                                                  >
+                                                    Edit
+                                                  </button>
+
+                                                  <button
+                                                    type="button"
+                                                    className="workspace-secondary-button"
+                                                    disabled={commentSaving}
+                                                    onClick={() =>
+                                                      handleDeleteComment(
+                                                        comment.id
+                                                      )
+                                                    }
+                                                  >
+                                                    Delete
+                                                  </button>
+                                                </div>
+                                              )}
+                                            </article>
+                                          )
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
                               </article>
                             ))
                           )}
@@ -1989,98 +2556,8 @@ function StudentProjectWorkspace() {
               )}
             </section>
 
-            {selectedHistoryTaskId && (
-              <section className="workspace-card">
-                <div className="workspace-card-header">
-                  <div>
-                    <span className="workspace-label">
-                      Collaboration
-                    </span>
 
-                    <h2>Task History</h2>
 
-                    <p>
-                      View the recorded changes for the selected task.
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="workspace-secondary-button"
-                    onClick={() => {
-                      setSelectedHistoryTaskId(null)
-                      setTaskHistory([])
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
-
-                {historyLoading ? (
-                  <div className="workspace-loading">
-                    Loading task history...
-                  </div>
-                ) : taskHistory.length === 0 ? (
-                  <div className="workspace-empty-state">
-                    <h3>No history yet</h3>
-                    <p>
-                      No changes have been recorded for this task yet.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="sprint-list">
-                    {taskHistory.map((history) => (
-                      <article
-                        key={history.id}
-                        className="sprint-card"
-                      >
-                        <div className="sprint-card-header">
-                          <div>
-                            <h3>{history.actionType}</h3>
-                            <span className="workspace-label">
-                              {history.userName ||
-                                history.userEmail ||
-                                'Unknown user'}
-                            </span>
-                          </div>
-
-                          <span className="workspace-label">
-                            {formatDateTime(history.createdAt)}
-                          </span>
-                        </div>
-
-                        <p className="workspace-description">
-                          {history.description}
-                        </p>
-
-                        {(history.oldValue != null ||
-                          history.newValue != null) && (
-                          <div className="workspace-details-grid">
-                            <div>
-                              <span className="workspace-label">
-                                Previous Value
-                              </span>
-                              <span className="workspace-value">
-                                {history.oldValue ?? '—'}
-                              </span>
-                            </div>
-
-                            <div>
-                              <span className="workspace-label">
-                                New Value
-                              </span>
-                              <span className="workspace-value">
-                                {history.newValue ?? '—'}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </article>
-                    ))}
-                  </div>
-                )}
-              </section>
-            )}
 
             <section className="workspace-card">
               <div className="workspace-card-header">
