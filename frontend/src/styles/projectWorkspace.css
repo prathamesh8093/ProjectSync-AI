@@ -684,3 +684,201 @@
     min-width: 0;
   }
 }
+
+/* Project document compact cards */
+.document-card {
+  overflow: hidden;
+}
+
+.document-summary-grid {
+  margin-top: 18px;
+  padding-top: 18px;
+}
+
+.document-card .workspace-button-row {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #eaecf0;
+}
+
+.document-card .workspace-primary-button,
+.document-card .workspace-secondary-button {
+  min-width: 120px;
+}
+
+.document-content-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid #d1e9ff;
+  border-radius: 10px;
+  background: #f8fbff;
+}
+
+.document-content-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.document-content-header h4 {
+  margin: 5px 0 0;
+  color: #101828;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.document-content {
+  padding: 16px;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #344054;
+  font-size: 14px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.document-empty-content {
+  padding: 24px 16px;
+  background: #ffffff;
+}
+
+@media (max-width: 700px) {
+  .document-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .document-card .workspace-primary-button,
+  .document-card .workspace-secondary-button {
+    width: 100%;
+  }
+}
+
+
+/* Independent task collaboration panels */
+.task-collaboration-area {
+  margin-top: 20px;
+  padding: 20px;
+  border: 1px solid #d0d5dd;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(16, 24, 40, 0.04);
+}
+
+.task-collaboration-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.task-collaboration-header h3 {
+  margin: 5px 0 0;
+  color: #101828;
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.task-collaboration-header p {
+  margin: 7px 0 0;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.task-collaboration-panel {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid #e4e7ec;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.task-collaboration-panel:first-of-type {
+  margin-top: 0;
+}
+
+.task-collaboration-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #eaecf0;
+}
+
+.task-collaboration-panel-header h4 {
+  margin: 5px 0 0;
+  color: #101828;
+  font-size: 17px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.task-collaboration-panel-header p {
+  margin: 6px 0 0;
+  color: #667085;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.task-collaboration-panel .sprint-list {
+  gap: 12px;
+}
+
+.task-collaboration-panel .sprint-card {
+  background: #ffffff;
+}
+
+.task-collaboration-panel .workspace-form {
+  margin-bottom: 18px;
+}
+
+.task-collaboration-panel .workspace-button-row {
+  margin-top: 0;
+}
+
+.task-collaboration-panel-header .workspace-button-row {
+  flex-shrink: 0;
+}
+
+.task-collaboration-panel .workspace-empty-state {
+  background: #ffffff;
+}
+
+.workspace-help-text {
+  color: #667085;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .task-collaboration-area {
+    padding: 16px;
+  }
+
+  .task-collaboration-panel {
+    padding: 14px;
+  }
+
+  .task-collaboration-header,
+  .task-collaboration-panel-header {
+    flex-direction: column;
+  }
+
+  .task-collaboration-panel-header .workspace-button-row {
+    width: 100%;
+  }
+
+  .task-collaboration-panel-header .workspace-primary-button,
+  .task-collaboration-panel-header .workspace-secondary-button {
+    width: 100%;
+  }
+}
