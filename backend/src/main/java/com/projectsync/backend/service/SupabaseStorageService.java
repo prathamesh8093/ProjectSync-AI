@@ -1,19 +1,14 @@
 package com.projectsync.backend.service;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
+import org.springframework.web.util.UriUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Objects;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class SupabaseStorageService {
@@ -28,103 +23,181 @@ public class SupabaseStorageService {
             @Value("${supabase.storage.bucket}") String bucket,
             @Value("${supabase.storage.service-role-key}") String serviceRoleKey) {
 
-        this.storageUrl = Objects.requireNonNull(storageUrl).replaceAll("/+$", "");
-        this.bucket = Objects.requireNonNull(bucket);
-        this.serviceRoleKey = Objects.requireNonNull(serviceRoleKey);
+        this.restClient = RestClient.builder().build();
+        this.storageUrl = storageUrl;
+        this.bucket = bucket;
+        this.serviceRoleKey = serviceRoleKey;
+    }
 
-        this.restClient = RestClient.builder()
-                .baseUrl(this.storageUrl + "/storage/v1")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + this.serviceRoleKey)
-                .defaultHeader("apikey", this.serviceRoleKey)
-                .build();
+    public String getBucket() {
+        return bucket;
+    }
+
+    public String getStorageUrl() {
+        return storageUrl;
+    }
+
+    public boolean isConfigured() {
+        return serviceRoleKey != null
+                && !serviceRoleKey.isBlank();
     }
 
     public void upload(
             String storagePath,
-            byte[] content,
+            byte[] fileBytes,
             String contentType) {
 
-        if (storagePath == null || storagePath.isBlank()) {
-            throw new IllegalArgumentException("Storage path is required");
+        validateConfiguration();
+
+        if (fileBytes == null) {
+            throw new IllegalArgumentException(
+                    "File content is required");
         }
 
-        if (content == null) {
-            throw new IllegalArgumentException("File content is required");
-        }
+        URI uri = buildObjectUri(storagePath);
 
-        MediaType mediaType = resolveMediaType(contentType);
+        MediaType mediaType = resolveContentType(contentType);
 
-        try {
-            restClient.post()
-                    .uri("/object/{bucket}/{path}", bucket, storagePath)
-                    .contentType(mediaType)
-                    .header("x-upsert", "false")
-                    .body(content)
-                    .retrieve()
-                    .toBodilessEntity();
-
-        } catch (RestClientException exception) {
-            throw new IllegalStateException(
-                    "Failed to upload file to Supabase Storage",
-                    exception
-            );
-        }
+        restClient
+                .post()
+                .uri(uri)
+                .header(
+                        HttpHeaders.AUTHORIZATION,
+                        "Bearer " + serviceRoleKey
+                )
+                .header(
+                        "apikey",
+                        serviceRoleKey
+                )
+                .header(
+                        "x-upsert",
+                        "false"
+                )
+                .contentType(mediaType)
+                .body(fileBytes)
+                .retrieve()
+                .toBodilessEntity();
     }
 
-    public byte[] download(String storagePath) {
+    public byte[] download(
+            String storagePath) {
 
-        if (storagePath == null || storagePath.isBlank()) {
-            throw new IllegalArgumentException("Storage path is required");
-        }
+        validateConfiguration();
 
-        try {
-            ResponseEntity<byte[]> response = restClient.get()
-                    .uri("/object/{bucket}/{path}", bucket, storagePath)
-                    .retrieve()
-                    .toEntity(byte[].class);
+        URI uri = buildObjectUri(storagePath);
 
-            return response.getBody() == null
-                    ? new byte[0]
-                    : response.getBody();
+        byte[] response = restClient
+                .get()
+                .uri(uri)
+                .header(
+                        HttpHeaders.AUTHORIZATION,
+                        "Bearer " + serviceRoleKey
+                )
+                .header(
+                        "apikey",
+                        serviceRoleKey
+                )
+                .retrieve()
+                .body(byte[].class);
 
-        } catch (RestClientException exception) {
+        if (response == null) {
             throw new IllegalStateException(
-                    "Failed to download file from Supabase Storage",
-                    exception
-            );
+                    "Supabase Storage returned an empty response");
         }
+
+        return response;
     }
 
-    public void delete(String storagePath) {
+    public void delete(
+            String storagePath) {
 
-        if (storagePath == null || storagePath.isBlank()) {
-            throw new IllegalArgumentException("Storage path is required");
-        }
+        validateConfiguration();
 
-        try {
-            restClient.delete()
-                    .uri("/object/{bucket}/{path}", bucket, storagePath)
-                    .retrieve()
-                    .toBodilessEntity();
+        URI uri = buildObjectUri(storagePath);
 
-        } catch (RestClientException exception) {
-            throw new IllegalStateException(
-                    "Failed to delete file from Supabase Storage",
-                    exception
-            );
-        }
+        restClient
+                .delete()
+                .uri(uri)
+                .header(
+                        HttpHeaders.AUTHORIZATION,
+                        "Bearer " + serviceRoleKey
+                )
+                .header(
+                        "apikey",
+                        serviceRoleKey
+                )
+                .retrieve()
+                .toBodilessEntity();
     }
 
-    private MediaType resolveMediaType(String contentType) {
+    private URI buildObjectUri(
+            String storagePath) {
 
-        if (contentType == null || contentType.isBlank()) {
+        if (storagePath == null || storagePath.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Storage path is required");
+        }
+
+        String encodedPath =
+                UriUtils.encodePath(
+                        storagePath,
+                        StandardCharsets.UTF_8
+                );
+
+        String encodedBucket =
+                UriUtils.encodePathSegment(
+                        bucket,
+                        StandardCharsets.UTF_8
+                );
+
+        return URI.create(
+                storageUrl
+                        + "/storage/v1/object/"
+                        + encodedBucket
+                        + "/"
+                        + encodedPath
+        );
+    }
+
+    private MediaType resolveContentType(
+            String contentType) {
+
+        if (contentType == null
+                || contentType.isBlank()) {
+
             return MediaType.APPLICATION_OCTET_STREAM;
         }
 
         try {
-            return MediaType.parseMediaType(contentType);
+            return MediaType.parseMediaType(
+                    contentType.trim()
+            );
         } catch (IllegalArgumentException exception) {
             return MediaType.APPLICATION_OCTET_STREAM;
+        }
+    }
+
+    private void validateConfiguration() {
+
+        if (serviceRoleKey == null
+                || serviceRoleKey.isBlank()) {
+
+            throw new IllegalStateException(
+                    "Supabase Storage service role key is not configured");
+        }
+
+        if (storageUrl == null
+                || storageUrl.isBlank()) {
+
+            throw new IllegalStateException(
+                    "Supabase Storage URL is not configured");
+        }
+
+        if (bucket == null
+                || bucket.isBlank()) {
+
+            throw new IllegalStateException(
+                    "Supabase Storage bucket is not configured");
         }
     }
 }

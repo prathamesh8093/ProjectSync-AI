@@ -16,12 +16,19 @@ api.interceptors.request.use((config) => {
   if (raw) {
     try {
       const parsed = JSON.parse(raw)
+
       if (parsed.token) {
         config.headers.Authorization = `Bearer ${parsed.token}`
       }
     } catch {
       // Ignore malformed storage data; request goes out without a token.
     }
+  }
+
+  // FormData requests must let the browser/Axios set the
+  // multipart/form-data Content-Type with the correct boundary.
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type']
   }
 
   return config
@@ -34,6 +41,7 @@ api.interceptors.response.use(
     if (error.response && error.response.status === 401) {
       sessionStorage.removeItem(STORAGE_KEY)
     }
+
     return Promise.reject(error)
   }
 )

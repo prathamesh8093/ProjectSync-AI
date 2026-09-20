@@ -41,6 +41,12 @@ import {
 import {
   getMyProjectWorkload,
 } from '../services/workloadService.js'
+import {
+  uploadProjectFile,
+  getMyProjectFiles,
+  downloadProjectFile,
+  deleteProjectFile,
+} from '../services/projectFileService.js'
 import '../styles/projectWorkspace.css'
 
 function StudentProjectWorkspace() {
@@ -50,6 +56,7 @@ function StudentProjectWorkspace() {
   const [sprints, setSprints] = useState([])
   const [tasks, setTasks] = useState([])
   const [documents, setDocuments] = useState([])
+  const [projectFiles, setProjectFiles] = useState([])
   const [openHistoryTaskIds, setOpenHistoryTaskIds] = useState([])
   const [taskHistoryByTaskId, setTaskHistoryByTaskId] = useState({})
   const [historyLoadingTaskIds, setHistoryLoadingTaskIds] = useState([])
@@ -72,6 +79,7 @@ function StudentProjectWorkspace() {
   const [sprintLoading, setSprintLoading] = useState(false)
   const [taskLoading, setTaskLoading] = useState(false)
   const [documentLoading, setDocumentLoading] = useState(false)
+  const [fileLoading, setFileLoading] = useState(false)
   const [historyLoading, setHistoryLoading] = useState(false)
   const [progressLoading, setProgressLoading] = useState(false)
   const [workloadLoading, setWorkloadLoading] = useState(false)
@@ -88,6 +96,7 @@ function StudentProjectWorkspace() {
 
   const [editingDocumentId, setEditingDocumentId] = useState(null)
   const [selectedDocumentId, setSelectedDocumentId] = useState(null)
+  const [selectedFileName, setSelectedFileName] = useState('')
 
   const [projectForm, setProjectForm] = useState({
     proposalId: '',
@@ -184,6 +193,17 @@ function StudentProjectWorkspace() {
           }
 
           setDocuments([])
+        }
+
+        try {
+          const fileResponse = await getMyProjectFiles()
+          setProjectFiles(fileResponse.data || [])
+        } catch (fileError) {
+          if (fileError.response?.status !== 404) {
+            throw fileError
+          }
+
+          setProjectFiles([])
         }
 
         try {
@@ -308,6 +328,7 @@ function StudentProjectWorkspace() {
       setSprints([])
       setTasks([])
       setDocuments([])
+      setProjectFiles([])
       setProjectProgress(null)
       setWorkload([])
     } catch (requestError) {
@@ -964,6 +985,166 @@ function StudentProjectWorkspace() {
       )
     } finally {
       setCommentSaving(false)
+    }
+  }
+
+  const formatFileSize = (fileSize) => {
+    if (fileSize == null || Number.isNaN(Number(fileSize))) {
+      return 'Unknown size'
+    }
+
+    const size = Number(fileSize)
+
+    if (size < 1024) {
+      return `${size} B`
+    }
+
+    if (size < 1024 * 1024) {
+      return `${(size / 1024).toFixed(1)} KB`
+    }
+
+    if (size < 1024 * 1024 * 1024) {
+      return `${(size / (1024 * 1024)).toFixed(1)} MB`
+    }
+
+    return `${(size / (1024 * 1024 * 1024)).toFixed(1)} GB`
+  }
+
+  const handleUploadProjectFile = async (event) => {
+    const file = event.target.files?.[0]
+
+    event.target.value = ''
+
+    if (!file) {
+      return
+    }
+
+    if (!project) {
+      setError('Create an Agile project before uploading files.')
+      return
+    }
+
+    setFileLoading(true)
+    setError('')
+    setSuccess('')
+    setSelectedFileName(file.name)
+
+    try {
+      const response = await uploadProjectFile(file)
+
+      setProjectFiles((previous) => [
+        response.data,
+        ...previous,
+      ])
+
+      setSelectedFileName('')
+      setSuccess('Project file uploaded successfully.')
+    } catch (requestError) {
+      console.error(requestError)
+
+      setError(
+        requestError.response?.data ||
+          'Unable to upload the project file.'
+      )
+    } finally {
+      setFileLoading(false)
+    }
+  }
+
+  const handleDownloadProjectFile = async (projectFile) => {
+    if (!projectFile?.id) {
+      return
+    }
+
+    setFileLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await downloadProjectFile(projectFile.id)
+      const blob = response.data
+      const downloadUrl = window.URL.createObjectURL(blob)
+      const anchor = document.createElement('a')
+
+      anchor.href = downloadUrl
+      anchor.download = projectFile.fileName || 'project-file'
+      document.body.appendChild(anchor)
+      anchor.click()
+      anchor.remove()
+      window.URL.revokeObjectURL(downloadUrl)
+
+      setSuccess('Project file download started.')
+    } catch (requestError) {
+      console.error(requestError)
+
+      setError(
+        requestError.response?.data ||
+          'Unable to download the project file.'
+      )
+    } finally {
+      setFileLoading(false)
+    }
+  }
+
+  const handleDeleteProjectFile = async (projectFileId) => {
+    if (!projectFileId) {
+      return
+    }
+
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this project file?'
+    )
+
+    if (!confirmed) {
+      return
+    }
+
+    setFileLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      await deleteProjectFile(projectFileId)
+
+      setProjectFiles((previous) =>
+        previous.filter((projectFile) => projectFile.id !== projectFileId)
+      )
+
+      setSuccess('Project file deleted successfully.')
+    } catch (requestError) {
+      console.error(requestError)
+
+      setError(
+        requestError.response?.data ||
+          'Unable to delete the project file.'
+      )
+    } finally {
+      setFileLoading(false)
+    }
+  }
+
+  const handleRefreshProjectFiles = async () => {
+    if (!project) {
+      return
+    }
+
+    setFileLoading(true)
+    setError('')
+    setSuccess('')
+
+    try {
+      const response = await getMyProjectFiles()
+      setProjectFiles(response.data || [])
+      setSuccess('Project files refreshed successfully.')
+    } catch (requestError) {
+      console.error(requestError)
+
+      setError(
+        requestError.response?.data ||
+          'Unable to load project files.'
+      )
+    } finally {
+      setFileLoading(false)
     }
   }
 
@@ -2789,6 +2970,143 @@ function StudentProjectWorkspace() {
 
 
 
+
+            <section className="workspace-card">
+              <div className="workspace-card-header">
+                <div>
+                  <span className="workspace-label">
+                    Collaboration
+                  </span>
+
+                  <h2>Project Files</h2>
+
+                  <p>
+                    Upload and share files with your approved Agile
+                    project team. Files are stored privately.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  className="workspace-secondary-button"
+                  disabled={fileLoading}
+                  onClick={handleRefreshProjectFiles}
+                >
+                  {fileLoading
+                    ? 'Working...'
+                    : 'Refresh Files'}
+                </button>
+              </div>
+
+              <div className="workspace-info-box">
+                All members of the approved project team can upload,
+                download, and delete project files.
+              </div>
+
+              <div className="workspace-form">
+                <div className="workspace-form-group">
+                  <label htmlFor="projectFileUpload">
+                    Upload Project File
+                  </label>
+
+                  <input
+                    id="projectFileUpload"
+                    type="file"
+                    onChange={handleUploadProjectFile}
+                    disabled={fileLoading}
+                  />
+
+                  {selectedFileName && (
+                    <div className="workspace-help-text">
+                      Uploading {selectedFileName}...
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {projectFiles.length === 0 ? (
+                <div className="workspace-empty-state">
+                  <h3>No project files yet</h3>
+
+                  <p>
+                    Upload the first file to share project resources
+                    with your team.
+                  </p>
+                </div>
+              ) : (
+                <div className="sprint-list">
+                  {projectFiles.map((projectFile) => (
+                    <article
+                      key={projectFile.id}
+                      className="sprint-card"
+                    >
+                      <div className="sprint-card-header">
+                        <div>
+                          <h3>{projectFile.fileName}</h3>
+
+                          <span className="workspace-label">
+                            Uploaded {formatDateTime(projectFile.createdAt)}
+                          </span>
+                        </div>
+
+                        <span className="workspace-status workspace-status-active">
+                          {formatFileSize(projectFile.fileSize)}
+                        </span>
+                      </div>
+
+                      <div className="workspace-details-grid">
+                        <div>
+                          <span className="workspace-label">
+                            Uploaded By
+                          </span>
+
+                          <span className="workspace-value">
+                            {projectFile.uploadedByName ||
+                              projectFile.uploadedByEmail ||
+                              'Unknown'}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="workspace-label">
+                            File Type
+                          </span>
+
+                          <span className="workspace-value">
+                            {projectFile.contentType ||
+                              'Unknown'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="workspace-button-row">
+                        <button
+                          type="button"
+                          className="workspace-primary-button"
+                          disabled={fileLoading}
+                          onClick={() =>
+                            handleDownloadProjectFile(projectFile)
+                          }
+                        >
+                          Download
+                        </button>
+
+                        <button
+                          type="button"
+                          className="workspace-secondary-button"
+                          disabled={fileLoading}
+                          onClick={() =>
+                            handleDeleteProjectFile(projectFile.id)
+                          }
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
 
             <section className="workspace-card">
               <div className="workspace-card-header">
