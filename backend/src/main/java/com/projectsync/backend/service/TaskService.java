@@ -546,11 +546,18 @@ public class TaskService {
     private User resolveStudent(
             String authenticatedEmail) {
 
-        return userRepository
+        User user = userRepository
                 .findByEmail(authenticatedEmail)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Authenticated user not found"));
+
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new ForbiddenOperationException(
+                    "Only students can access this resource");
+        }
+
+        return user;
     }
 
     private Team resolveTeam(User user) {
