@@ -5,6 +5,8 @@ import com.projectsync.backend.entity.Project;
 import com.projectsync.backend.entity.Task;
 import com.projectsync.backend.entity.TeamMember;
 import com.projectsync.backend.entity.User;
+import com.projectsync.backend.exception.ForbiddenOperationException;
+import com.projectsync.backend.exception.ResourceNotFoundException;
 import com.projectsync.backend.repository.ProjectRepository;
 import com.projectsync.backend.repository.TaskRepository;
 import com.projectsync.backend.repository.TeamMemberRepository;
@@ -39,19 +41,24 @@ public class WorkloadService {
     public List<WorkloadResponse> getMyProjectWorkload(String email) {
 
         User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found."));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found."));
+
+        if (!"STUDENT".equals(currentUser.getRole())) {
+            throw new ForbiddenOperationException(
+                    "Only students can access this resource");
+        }
 
         TeamMember currentMembership = teamMemberRepository
                 .findByStudentUser(currentUser)
-                .orElseThrow(() -> new RuntimeException("You are not a member of a team."));
+                .orElseThrow(() -> new ForbiddenOperationException("You are not a member of a team."));
 
         Project project = projectRepository
                 .findByTeam(currentMembership.getTeam())
-                .orElseThrow(() -> new RuntimeException("Project not found."));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found."));
 
         if (project.getProposal() == null
                 || !"APPROVED".equalsIgnoreCase(project.getProposal().getStatus())) {
-            throw new RuntimeException(
+            throw new ForbiddenOperationException(
                     "Agile workload is available only for an approved project."
             );
         }

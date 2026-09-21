@@ -5,7 +5,6 @@ import com.projectsync.backend.entity.Project;
 import com.projectsync.backend.entity.Task;
 import com.projectsync.backend.entity.TaskHistory;
 import com.projectsync.backend.entity.Team;
-import com.projectsync.backend.entity.TeamMember;
 import com.projectsync.backend.entity.User;
 import com.projectsync.backend.exception.ForbiddenOperationException;
 import com.projectsync.backend.exception.ResourceNotFoundException;
@@ -154,10 +153,17 @@ public class TaskHistoryService {
 
     private User resolveStudent(String email) {
 
-        return userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "User not found"));
+
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new ForbiddenOperationException(
+                    "Only students can access this resource");
+        }
+
+        return user;
     }
 
     private void requireTeamMembership(

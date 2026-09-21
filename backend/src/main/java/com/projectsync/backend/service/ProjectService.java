@@ -91,6 +91,8 @@ public class ProjectService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Your team has not created an Agile project yet."));
 
+        requireApprovedProject(project);
+
         return toResponse(project);
     }
 
@@ -160,6 +162,8 @@ public class ProjectService {
             throw new ForbiddenOperationException("You do not have access to this project.");
         }
 
+        requireApprovedProject(project);
+
         return toResponse(project);
     }
 
@@ -170,6 +174,8 @@ public class ProjectService {
             CreateProjectRequest request) {
         TeamMember leaderMembership = resolveLeaderMembership(authentication);
         Project project = findProjectForTeam(projectId, leaderMembership.getTeam());
+
+        requireApprovedProject(project);
 
         project.setName(request.getName().trim());
         project.setDescription(request.getDescription());
@@ -186,6 +192,8 @@ public class ProjectService {
             String status) {
         TeamMember leaderMembership = resolveLeaderMembership(authentication);
         Project project = findProjectForTeam(projectId, leaderMembership.getTeam());
+
+        requireApprovedProject(project);
 
         if (!"NOT_STARTED".equals(status)
                 && !"ACTIVE".equals(status)

@@ -187,10 +187,17 @@ public class ProjectDocumentService {
 
     private User resolveStudent(String email) {
 
-        return userRepository.findByEmail(email)
+        User user = userRepository.findByEmail(email)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "User not found"));
+
+        if (!"STUDENT".equals(user.getRole())) {
+            throw new ForbiddenOperationException(
+                    "Only students can access this resource");
+        }
+
+        return user;
     }
 
     private Project resolveMyProject(User user) {
