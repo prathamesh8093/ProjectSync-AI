@@ -1,6 +1,8 @@
 package com.projectsync.backend.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -18,10 +20,11 @@ public class StudentProfile {
     @Column(length = 100)
     private String department;
 
-    @Column
+    @Column(name = "\"year\"")
     private Integer year;
 
-    @Column(columnDefinition = "TEXT")
+    @JdbcTypeCode(SqlTypes.LONGVARCHAR)
+    @Column(name = "bio", columnDefinition = "TEXT")
     private String bio;
 
     @Column(name = "created_at", nullable = false)
