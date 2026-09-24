@@ -39,8 +39,7 @@ public class VcsController {
                 "status", "UP",
                 "service", "ProjectSync-AI VCS Engine",
                 "profile", System.getProperty("spring.profiles.active", "local"),
-                "trackedRepositories", gitService.listRepositories().size()
-        ));
+                "trackedRepositories", gitService.listRepositories().size()));
     }
 
     // --------------------------------------------------------------------------

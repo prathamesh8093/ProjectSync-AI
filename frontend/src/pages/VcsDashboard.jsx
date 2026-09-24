@@ -148,6 +148,23 @@ export default function VcsDashboard() {
     loadRepositories()
   }, [])
 
+  // Automatically probe health every 3s when backend is offline to reconnect seamlessly
+  useEffect(() => {
+    if (!backendOffline) return
+    const interval = setInterval(() => {
+      vcsService.getHealth()
+        .then(() => {
+          setBackendOffline(false)
+          loadRepositories()
+          showToast('success', 'Connected to local Spring Boot backend!')
+        })
+        .catch(() => {
+          // Backend still starting, keep probing
+        })
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [backendOffline, loadRepositories])
+
   useEffect(() => {
     if (activeRepoId) {
       loadActiveRepo()
