@@ -163,4 +163,39 @@ public class GitServiceTest {
         assertFalse(Files.exists(noteFile));
         assertTrue(gitService.getStatus(repo.getId()).isClean());
     }
+
+    @Test
+    void testRemoteConfigurationAndSyncWithBareRepo() throws Exception {
+        // 1. Create a bare remote Git repository to simulate a remote server (like GitHub)
+        Path bareDir = tempStorageDir.resolve("server-bare.git");
+        org.eclipse.jgit.api.Git.init().setBare(true).setDirectory(bareDir.toFile()).call().close();
+
+        // 2. Create local repository
+        CreateRepoRequest req = new CreateRepoRequest("sync-repo", "Testing sync", "main", true);
+        RepositoryDetailsDto repo = gitService.createRepository(req, "sync-user");
+
+        // 3. Configure remote
+        RemoteConfigDto remoteConfig = new RemoteConfigDto("origin", bareDir.toUri().toString(), null);
+        gitService.setRemote(repo.getId(), remoteConfig);
+
+        List<RemoteConfigDto> remotes = gitService.getRemotes(repo.getId());
+        assertEquals(1, remotes.size());
+        assertEquals("origin", remotes.get(0).getName());
+        assertEquals(bareDir.toUri().toString(), remotes.get(0).getFetchUrl());
+
+        // 4. Push to remote
+        SyncRequest pushReq = new SyncRequest("origin", "main", null, null, false);
+        SyncResultDto pushResult = gitService.pushRemote(repo.getId(), pushReq);
+        assertTrue(pushResult.isSuccess(), "Push should succeed: " + pushResult.getMessage());
+
+        // 5. Fetch from remote
+        SyncRequest fetchReq = new SyncRequest("origin", null, null, null, false);
+        SyncResultDto fetchResult = gitService.fetchRemote(repo.getId(), fetchReq);
+        assertTrue(fetchResult.isSuccess(), "Fetch should succeed: " + fetchResult.getMessage());
+
+        // 6. Pull from remote
+        SyncRequest pullReq = new SyncRequest("origin", "main", null, null, false);
+        SyncResultDto pullResult = gitService.pullRemote(repo.getId(), pullReq);
+        assertTrue(pullResult.isSuccess(), "Pull should succeed: " + pullResult.getMessage());
+    }
 }

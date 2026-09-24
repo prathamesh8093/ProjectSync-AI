@@ -870,6 +870,7 @@ public class GitService {
             StoredConfig config = repo.getConfig();
 
             config.setString("remote", req.getName(), "url", req.getFetchUrl());
+            config.setString("remote", req.getName(), "fetch", "+refs/heads/*:refs/remotes/" + req.getName() + "/*");
             if (req.getPushUrl() != null && !req.getPushUrl().isBlank()) {
                 config.setString("remote", req.getName(), "pushurl", req.getPushUrl());
             } else {
@@ -903,6 +904,9 @@ public class GitService {
 
             return new SyncResultDto(true, "FETCH", "Fetched successfully from " + req.getRemoteName(), details.toString());
         } catch (Exception e) {
+            if (e.getMessage() != null && e.getMessage().contains("Nothing to fetch")) {
+                return new SyncResultDto(true, "FETCH", "Already up to date (nothing to fetch)", "");
+            }
             return new SyncResultDto(false, "FETCH", "Fetch failed: " + e.getMessage(), e.toString());
         }
     }
