@@ -590,3 +590,111 @@
   align-items: center;
   gap: 0.75rem;
 }
+
+/* Offline Backend Banner */
+.vcs-offline-banner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: var(--radius-md);
+}
+
+.vcs-offline-icon {
+  flex-shrink: 0;
+}
+
+.vcs-offline-info {
+  flex: 1;
+}
+
+.vcs-offline-info h4 {
+  margin: 0 0 0.35rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ef4444;
+}
+
+.vcs-offline-info p {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.84rem;
+  color: var(--text-muted);
+}
+
+.vcs-offline-command code {
+  display: inline-block;
+  background-color: var(--surface-bg);
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  font-family: monospace;
+  font-size: 0.82rem;
+  color: var(--primary);
+  border: 1px solid var(--border-color);
+}
+
+/* Dev Mode Badges */
+.vcs-dev-pill {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.12rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #10b981;
+  background-color: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 9999px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+/* Local Dev Banner on Login Page */
+.local-dev-vcs-banner {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px dashed rgba(99, 102, 241, 0.35);
+  text-align: center;
+}
+
+.local-dev-vcs-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: rgba(99, 102, 241, 0.2);
+  color: #818cf8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  border-radius: 9999px;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+
+.local-dev-vcs-text {
+  font-size: 0.82rem;
+  color: var(--text-muted, #94a3b8);
+  margin-bottom: 0.75rem;
+}
+
+.local-dev-vcs-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 1rem;
+  background-color: #6366f1;
+  color: #ffffff !important;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border-radius: var(--radius-sm, 6px);
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.local-dev-vcs-btn:hover {
+  background-color: #4f46e5;
+  color: #ffffff !important;
+}

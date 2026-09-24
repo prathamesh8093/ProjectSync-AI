@@ -105,6 +105,16 @@ function Login() {
         <p className="auth-switch">
           Don't have an account? <Link to="/register">Register</Link>
         </p>
+
+        {import.meta.env.DEV && (
+          <div className="local-dev-vcs-banner">
+            <div className="local-dev-vcs-badge">Local Dev Mode</div>
+            <p className="local-dev-vcs-text">Testing VCS independently without Supabase?</p>
+            <Link to="/student/vcs" className="local-dev-vcs-btn">
+              Launch VCS Dashboard &rarr;
+            </Link>
+          </div>
+        )}
       </form>
     </div>
   )

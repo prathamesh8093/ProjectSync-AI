@@ -9,12 +9,16 @@ function DashboardLayout({ navItems, children }) {
   const location = useLocation()
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
-  const initials = user.fullName
+  const displayName = user?.fullName || 'Local Developer'
+  const displayRole = user?.role || 'DEVELOPER'
+
+  const initials = displayName
     .split(' ')
+    .filter(Boolean)
     .map((part) => part[0])
     .slice(0, 2)
     .join('')
-    .toUpperCase()
+    .toUpperCase() || 'LD'
 
   return (
     <div className="dashboard-shell">
@@ -78,8 +82,11 @@ function DashboardLayout({ navItems, children }) {
             <div className="header-user-avatar">{initials}</div>
 
             <div>
-              <div className="header-user-name">{user.fullName}</div>
-              <div className="header-user-role">{user.role}</div>
+              <div className="header-user-name">{displayName}</div>
+              <div className="header-user-role">
+                {displayRole}
+                {user?.isLocalDev && <span className="vcs-dev-pill">LOCAL DEV</span>}
+              </div>
             </div>
           </div>
 

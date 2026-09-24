@@ -39,6 +39,7 @@ export default function VcsDashboard() {
   const [activeTab, setActiveTab] = useState('changes')
   const [loading, setLoading] = useState(false)
   const [feedback, setFeedback] = useState(null)
+  const [backendOffline, setBackendOffline] = useState(false)
 
   // Commit composer
   const [commitMessage, setCommitMessage] = useState('')
@@ -81,6 +82,7 @@ export default function VcsDashboard() {
   const loadRepositories = useCallback(async () => {
     try {
       setLoading(true)
+      setBackendOffline(false)
       const list = await vcsService.listRepositories()
       setRepositories(list)
       if (list.length > 0 && !activeRepoId) {
@@ -91,7 +93,13 @@ export default function VcsDashboard() {
         setStatus(null)
       }
     } catch (err) {
-      showToast('error', 'Failed to load repositories: ' + (err.response?.data?.message || err.message))
+      const isNetworkErr = !err.response || err.code === 'ERR_NETWORK' || err.message === 'Network Error'
+      if (isNetworkErr) {
+        setBackendOffline(true)
+        showToast('error', 'Spring Boot backend is unreachable on port 8081. Please ensure backend is running.')
+      } else {
+        showToast('error', 'Failed to load repositories: ' + (err.response?.data?.message || err.message))
+      }
     } finally {
       setLoading(false)
     }
@@ -379,6 +387,28 @@ export default function VcsDashboard() {
             {feedback.type === 'success' && <CheckCircle2 size={18} />}
             {feedback.type === 'error' && <AlertCircle size={18} />}
             <span>{feedback.message}</span>
+          </div>
+        )}
+
+        {/* Backend Offline Warning Banner */}
+        {backendOffline && (
+          <div className="vcs-offline-banner">
+            <div className="vcs-offline-icon">
+              <AlertCircle size={22} color="#f87171" />
+            </div>
+            <div className="vcs-offline-info">
+              <h4>Local Spring Boot Backend Offline (Port 8081)</h4>
+              <p>
+                Could not connect to <code>http://localhost:8081/api/vcs</code>. The VCS dashboard needs the local Spring Boot backend running with H2 and JGit.
+              </p>
+              <div className="vcs-offline-command">
+                <code>cd backend ; .\mvnw.cmd spring-boot:run</code>
+              </div>
+            </div>
+            <button className="vcs-btn-sm vcs-btn-primary-sm" onClick={loadRepositories}>
+              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              <span>Retry</span>
+            </button>
           </div>
         )}
 

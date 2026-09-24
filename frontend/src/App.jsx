@@ -86,7 +86,7 @@ function App() {
         <Route
           path="/student/vcs"
           element={
-            <ProtectedRoute allowedRoles={['STUDENT', 'FACULTY']}>
+            <ProtectedRoute allowedRoles={['STUDENT', 'FACULTY']} allowDevAccess={true}>
               <VcsDashboard />
             </ProtectedRoute>
           }
@@ -95,7 +95,7 @@ function App() {
         <Route
           path="/vcs"
           element={
-            <ProtectedRoute allowedRoles={['STUDENT', 'FACULTY']}>
+            <ProtectedRoute allowedRoles={['STUDENT', 'FACULTY']} allowDevAccess={true}>
               <VcsDashboard />
             </ProtectedRoute>
           }

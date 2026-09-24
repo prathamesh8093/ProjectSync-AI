@@ -1,6 +1,12 @@
 import api from './api.js'
 
 export const vcsService = {
+  // Health & Connectivity
+  getHealth: async () => {
+    const res = await api.get('/vcs/health')
+    return res.data
+  },
+
   // Repositories
   listRepositories: async () => {
     const res = await api.get('/vcs/repositories')

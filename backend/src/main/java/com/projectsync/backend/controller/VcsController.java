@@ -30,6 +30,20 @@ public class VcsController {
     }
 
     // --------------------------------------------------------------------------
+    // HEALTH & DIAGNOSTICS
+    // --------------------------------------------------------------------------
+
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> getHealth() {
+        return ResponseEntity.ok(Map.of(
+                "status", "UP",
+                "service", "ProjectSync-AI VCS Engine",
+                "profile", System.getProperty("spring.profiles.active", "local"),
+                "trackedRepositories", gitService.listRepositories().size()
+        ));
+    }
+
+    // --------------------------------------------------------------------------
     // REPOSITORIES
     // --------------------------------------------------------------------------
 
