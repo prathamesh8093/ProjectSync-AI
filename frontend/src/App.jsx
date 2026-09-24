@@ -10,6 +10,7 @@ import StudentProjectProposal from './pages/StudentProjectProposal.jsx'
 import StudentProjectWorkspace from './pages/StudentProjectWorkspace.jsx'
 import FacultyProjectProposals from './pages/FacultyProjectProposals.jsx'
 import FacultyProjectMonitoring from './pages/FacultyProjectMonitoring.jsx'
+import VcsDashboard from './pages/VcsDashboard.jsx'
 import ProtectedRoute from './routes/ProtectedRoute.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 
@@ -78,6 +79,24 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['STUDENT']}>
               <StudentProjectWorkspace />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/student/vcs"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT', 'FACULTY']}>
+              <VcsDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/vcs"
+          element={
+            <ProtectedRoute allowedRoles={['STUDENT', 'FACULTY']}>
+              <VcsDashboard />
             </ProtectedRoute>
           }
         />

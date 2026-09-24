@@ -5,6 +5,7 @@ import {
   Users,
   FileText,
   ListChecks,
+  GitBranch,
 } from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
 import '../styles/dashboard.css'
@@ -15,6 +16,7 @@ const studentNavItems = [
   { label: 'My Team', icon: Users, path: '/student/team' },
   { label: 'Project Proposal', icon: FileText, path: '/student/proposal' },
   { label: 'Tasks / Projects', icon: ListChecks, path: '/student/projects' },
+  { label: 'Version Control (VCS)', icon: GitBranch, path: '/student/vcs' },
 ]
 
 function StudentDashboard() {
@@ -46,6 +48,14 @@ function StudentDashboard() {
           <p>
             Open your Agile project workspace, manage progress,
             and prepare for sprint planning.
+          </p>
+        </Link>
+
+        <Link to="/student/vcs" className="dashboard-card">
+          <h2>Version Control (VCS)</h2>
+          <p>
+            Real Git repository management, staging, commits, branches,
+            diff inspection, and GitHub synchronization.
           </p>
         </Link>
       </div>

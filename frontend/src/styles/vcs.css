@@ -1,0 +1,592 @@
+/* ==============================================================================
+   ProjectSync AI - Version Control System (VCS) Module Styles
+   ============================================================================== */
+
+.vcs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+/* Header & Top Bar */
+.vcs-topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.vcs-repo-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.vcs-select {
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.vcs-select:focus {
+  border-color: var(--primary);
+}
+
+.vcs-branch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  background-color: var(--primary-soft);
+  color: var(--primary);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+  border: 1px solid rgba(52, 84, 209, 0.2);
+}
+
+.vcs-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.vcs-status-clean {
+  background-color: var(--success-soft);
+  color: var(--success);
+  border: 1px solid rgba(31, 157, 85, 0.2);
+}
+
+.vcs-status-dirty {
+  background-color: var(--warning-soft);
+  color: var(--warning);
+  border: 1px solid rgba(183, 110, 0, 0.2);
+}
+
+.vcs-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Tabs */
+.vcs-tabs {
+  display: flex;
+  border-bottom: 2px solid var(--border);
+  gap: 0.5rem;
+}
+
+.vcs-tab {
+  padding: 0.65rem 1.15rem;
+  border: none;
+  background: none;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: all 0.15s ease;
+}
+
+.vcs-tab:hover {
+  color: var(--primary);
+}
+
+.vcs-tab.is-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.vcs-tab-count {
+  padding: 0.1rem 0.45rem;
+  background-color: var(--surface-muted);
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.vcs-tab.is-active .vcs-tab-count {
+  background-color: var(--primary-soft);
+  color: var(--primary);
+}
+
+/* Working Tree Staging View */
+.vcs-staging-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 900px) {
+  .vcs-staging-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vcs-panel {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+.vcs-panel-header {
+  padding: 0.9rem 1.15rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.vcs-panel-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.vcs-panel-body {
+  padding: 1rem 1.15rem;
+  flex: 1;
+}
+
+/* File list */
+.vcs-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.vcs-file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-muted);
+  border: 1px solid transparent;
+  font-size: 0.88rem;
+  transition: all 0.15s ease;
+}
+
+.vcs-file-item:hover {
+  border-color: var(--border);
+  background-color: #EBF0F8;
+}
+
+.vcs-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vcs-file-path {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.vcs-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.badge-added {
+  background-color: #D1FADF;
+  color: #027A48;
+}
+
+.badge-modified {
+  background-color: #FEF0C7;
+  color: #B54708;
+}
+
+.badge-deleted {
+  background-color: #FEE4E2;
+  color: #B42318;
+}
+
+.badge-untracked {
+  background-color: #E4E7EC;
+  color: #344054;
+}
+
+.badge-conflict {
+  background-color: #FCE7F6;
+  color: #C11574;
+}
+
+.vcs-file-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.vcs-btn-sm {
+  padding: 0.25rem 0.55rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.15s ease;
+}
+
+.vcs-btn-sm:hover {
+  background-color: var(--surface-muted);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.vcs-btn-primary-sm {
+  background-color: var(--primary);
+  color: #FFFFFF;
+  border-color: var(--primary);
+}
+
+.vcs-btn-primary-sm:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+/* Commit Box */
+.vcs-commit-box {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.vcs-commit-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-family: inherit;
+  font-size: 0.88rem;
+  resize: vertical;
+  min-height: 70px;
+  outline: none;
+}
+
+.vcs-commit-textarea:focus {
+  border-color: var(--primary);
+}
+
+.vcs-commit-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vcs-char-count {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Diff Viewer */
+.vcs-diff-viewer {
+  background-color: #1E2235;
+  color: #E2E5EA;
+  border-radius: var(--radius-sm);
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: 0.85rem;
+  padding: 1rem;
+  overflow-x: auto;
+  max-height: 450px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.diff-line-add {
+  background-color: rgba(46, 160, 67, 0.2);
+  color: #7EE787;
+  display: block;
+}
+
+.diff-line-del {
+  background-color: rgba(248, 81, 73, 0.2);
+  color: #FFA198;
+  display: block;
+}
+
+.diff-line-header {
+  color: #79C0FF;
+  font-weight: 700;
+  display: block;
+}
+
+.diff-line-meta {
+  color: #8B949E;
+  display: block;
+}
+
+/* Commit History Log */
+.vcs-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.vcs-commit-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: var(--shadow);
+  transition: border-color 0.15s ease;
+}
+
+.vcs-commit-card:hover {
+  border-color: var(--primary);
+}
+
+.vcs-commit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.vcs-commit-message {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.vcs-commit-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+}
+
+.vcs-sha-badge {
+  font-family: monospace;
+  background-color: var(--surface-muted);
+  border: 1px solid var(--border);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Branch List */
+.vcs-branch-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.vcs-branch-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: var(--shadow);
+}
+
+.vcs-branch-card.is-active {
+  border-color: var(--primary);
+  background-color: #FAFCFF;
+}
+
+.vcs-branch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vcs-branch-name {
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Modal Dialogs */
+.vcs-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 1rem;
+}
+
+.vcs-modal {
+  background-color: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  width: 100%;
+  max-width: 540px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: 90vh;
+}
+
+.vcs-modal-header {
+  padding: 1.15rem 1.35rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vcs-modal-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.vcs-modal-body {
+  padding: 1.25rem 1.35rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.vcs-modal-footer {
+  padding: 1rem 1.35rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* Form controls */
+.vcs-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.vcs-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vcs-input {
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.vcs-input:focus {
+  border-color: var(--primary);
+}
+
+.vcs-help-text {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+/* Alert Notification */
+.vcs-alert {
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.vcs-alert-success {
+  background-color: var(--success-soft);
+  color: var(--success);
+  border: 1px solid rgba(31, 157, 85, 0.2);
+}
+
+.vcs-alert-error {
+  background-color: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid rgba(211, 58, 58, 0.2);
+}
+
+.vcs-alert-info {
+  background-color: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid rgba(52, 84, 209, 0.2);
+}
+
+.vcs-empty-state {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
