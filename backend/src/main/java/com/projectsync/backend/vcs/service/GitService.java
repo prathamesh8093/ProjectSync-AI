@@ -237,21 +237,49 @@ public class GitService {
     public CloneResultDto cloneRepository(CloneRepoRequest req, String ownerUsername) {
         String remoteUrl = req.getRemoteUrl() != null ? req.getRemoteUrl().trim() : "";
         if (remoteUrl.isBlank()) {
-            throw new BadRequestException("Remote repository URL must not be blank");
+            throw new BadRequestException("Repository source or URL must not be blank");
+        }
+
+        // Check if remoteUrl refers to an existing internal repository by name or ID
+        Optional<RepositoryMetadata> internalSource = metadataStore.findByName(remoteUrl);
+        if (internalSource.isEmpty()) {
+            internalSource = metadataStore.findById(remoteUrl);
+        }
+
+        String cloneUri = remoteUrl;
+        String recordedRemoteUrl = remoteUrl;
+
+        if (internalSource.isPresent()) {
+            Path internalDiskPath = Paths.get(internalSource.get().getDiskPath());
+            cloneUri = internalDiskPath.toUri().toString();
+            recordedRemoteUrl = "internal:" + internalSource.get().getName();
+        } else {
+            try {
+                Path localPath = Paths.get(remoteUrl);
+                if (Files.exists(localPath)) {
+                    cloneUri = localPath.toUri().toString();
+                    recordedRemoteUrl = localPath.toString();
+                }
+            } catch (Exception ignored) {
+            }
         }
 
         // Determine repository name
         String repoName = req.getName();
         if (repoName == null || repoName.trim().isBlank()) {
-            String cleanUrl = remoteUrl.replaceAll("/+$", "");
-            if (cleanUrl.endsWith(".git")) {
-                cleanUrl = cleanUrl.substring(0, cleanUrl.length() - 4);
-            }
-            int lastSlash = Math.max(cleanUrl.lastIndexOf('/'), cleanUrl.lastIndexOf('\\'));
-            if (lastSlash >= 0 && lastSlash < cleanUrl.length() - 1) {
-                repoName = cleanUrl.substring(lastSlash + 1);
+            if (internalSource.isPresent()) {
+                repoName = internalSource.get().getName() + "-clone";
             } else {
-                repoName = "repo-" + System.currentTimeMillis();
+                String cleanUrl = remoteUrl.replaceAll("/+$", "");
+                if (cleanUrl.endsWith(".git")) {
+                    cleanUrl = cleanUrl.substring(0, cleanUrl.length() - 4);
+                }
+                int lastSlash = Math.max(cleanUrl.lastIndexOf('/'), cleanUrl.lastIndexOf('\\'));
+                if (lastSlash >= 0 && lastSlash < cleanUrl.length() - 1) {
+                    repoName = cleanUrl.substring(lastSlash + 1);
+                } else {
+                    repoName = "repo-" + System.currentTimeMillis();
+                }
             }
         }
         repoName = repoName.trim();
@@ -268,10 +296,10 @@ public class GitService {
 
         StringBuilder outputLog = new StringBuilder();
         outputLog.append("Cloning into '").append(repoName).append("'...\n");
-        outputLog.append("Remote URL: ").append(remoteUrl).append("\n");
+        outputLog.append("Source: ").append(internalSource.isPresent() ? "Internal Repository [" + internalSource.get().getName() + "]" : remoteUrl).append("\n");
 
         CloneCommand cloneCmd = Git.cloneRepository()
-                .setURI(remoteUrl)
+                .setURI(cloneUri)
                 .setDirectory(repoPath.toFile())
                 .setCloneAllBranches(true);
 
@@ -344,10 +372,10 @@ public class GitService {
                     repoName,
                     (req.getDescription() != null && !req.getDescription().isBlank())
                             ? req.getDescription().trim()
-                            : "Cloned from " + remoteUrl,
+                            : (internalSource.isPresent() ? "Cloned from internal repository " + internalSource.get().getName() : "Cloned from " + recordedRemoteUrl),
                     repoPath.toString(),
                     currentBranch,
-                    remoteUrl,
+                    recordedRemoteUrl,
                     ownerUsername,
                     Instant.now(),
                     Instant.now()

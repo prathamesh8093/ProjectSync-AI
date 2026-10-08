@@ -20,6 +20,7 @@ import {
   Layers,
   Download,
   Terminal,
+  Database,
   ChevronDown,
   ChevronUp,
   LayoutDashboard,
@@ -90,6 +91,7 @@ export default function VcsDashboard() {
 
   // Clone repo modal
   const [cloneRepoModal, setCloneRepoModal] = useState(false)
+  const [cloneSourceType, setCloneSourceType] = useState('internal')
   const [cloneData, setCloneData] = useState({
     remoteUrl: '',
     name: '',
@@ -1632,24 +1634,87 @@ export default function VcsDashboard() {
                 /* FORM VIEW */
                 <form onSubmit={handleCloneRepo}>
                   <div className="vcs-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                    <div className="vcs-form-group">
-                      <label className="vcs-label">Remote Repository URL *</label>
-                      <input
-                        className="vcs-input"
-                        placeholder="e.g. https://github.com/octocat/Hello-World.git"
-                        value={cloneData.remoteUrl}
-                        onChange={(e) => handleCloneUrlChange(e.target.value)}
-                        disabled={cloneLoading}
-                        required
-                      />
-                      <span className="vcs-help-text">
-                        HTTPS remote clone URL (e.g. GitHub, GitLab, Bitbucket).
-                      </span>
+                    <div style={{ padding: '0.65rem 0.85rem', background: '#eff6ff', borderRadius: '8px', border: '1px solid #bfdbfe', fontSize: '0.82rem', color: '#1e40af', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <ShieldCheck size={18} style={{ flexShrink: 0, color: '#2563eb' }} />
+                      <span><strong>Self-Hosted Git:</strong> Repositories are hosted and managed directly on your local ProjectSync-AI server. No external GitHub account or connection needed.</span>
                     </div>
+
+                    {/* Source Type Selector */}
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <button
+                        type="button"
+                        className={`vcs-btn-sm ${cloneSourceType === 'internal' ? 'vcs-btn-primary-sm' : ''}`}
+                        onClick={() => {
+                          setCloneSourceType('internal')
+                          setCloneData({ ...cloneData, remoteUrl: '', name: '' })
+                        }}
+                      >
+                        <Database size={13} />
+                        <span>Clone Internal Repo</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className={`vcs-btn-sm ${cloneSourceType === 'custom' ? 'vcs-btn-primary-sm' : ''}`}
+                        onClick={() => {
+                          setCloneSourceType('custom')
+                          setCloneData({ ...cloneData, remoteUrl: '', name: '' })
+                        }}
+                      >
+                        <FolderGit2 size={13} />
+                        <span>Local Path / URL</span>
+                      </button>
+                    </div>
+
+                    {cloneSourceType === 'internal' ? (
+                      <div className="vcs-form-group">
+                        <label className="vcs-label">Select Internal Repository to Clone *</label>
+                        <select
+                          className="vcs-input"
+                          value={cloneData.remoteUrl}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setCloneData({
+                              ...cloneData,
+                              remoteUrl: val,
+                              name: val ? `${val}-clone` : '',
+                              isNameAutoDerived: false,
+                            })
+                          }}
+                          disabled={cloneLoading}
+                          required
+                        >
+                          <option value="">-- Choose an internal team repository --</option>
+                          {repositories.map((r) => (
+                            <option key={r.id} value={r.name}>
+                              {r.name} (branch: {r.defaultBranch}, owner: {r.ownerUsername || 'team'})
+                            </option>
+                          ))}
+                        </select>
+                        <span className="vcs-help-text">
+                          Clones directly from the ProjectSync-AI local repository store.
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="vcs-form-group">
+                        <label className="vcs-label">Local Filesystem Path or Internal Git URL *</label>
+                        <input
+                          className="vcs-input"
+                          placeholder="e.g. C:\Users\DELL\.projectsync\repositories\team-repo or internal-repo-name"
+                          value={cloneData.remoteUrl}
+                          onChange={(e) => handleCloneUrlChange(e.target.value)}
+                          disabled={cloneLoading}
+                          required
+                        />
+                        <span className="vcs-help-text">
+                          Specify a local folder containing a Git repo or an internal server clone URL.
+                        </span>
+                      </div>
+                    )}
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                       <div className="vcs-form-group">
-                        <label className="vcs-label">Local Repository Name</label>
+                        <label className="vcs-label">Local Destination Name</label>
                         <input
                           className="vcs-input"
                           placeholder="Auto-derived if empty"
@@ -1675,7 +1740,7 @@ export default function VcsDashboard() {
                       <label className="vcs-label">Description (optional)</label>
                       <input
                         className="vcs-input"
-                        placeholder="Brief notes about this project repository"
+                        placeholder="Brief notes about this cloned repository"
                         value={cloneData.description}
                         onChange={(e) => setCloneData({ ...cloneData, description: e.target.value })}
                         disabled={cloneLoading}
@@ -1683,60 +1748,59 @@ export default function VcsDashboard() {
                     </div>
 
                     {/* Collapsible Auth Section */}
-                    <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.65rem 0.85rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => setShowCloneAuth(!showCloneAuth)}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          padding: 0,
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          width: '100%',
-                          fontSize: '0.86rem',
-                          fontWeight: 600,
-                          color: 'var(--text-primary)',
-                        }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <ShieldCheck size={16} color="var(--primary)" />
-                          <span>Private Repository Credentials (Optional)</span>
-                        </span>
-                        {showCloneAuth ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
+                    {cloneSourceType === 'custom' && (
+                      <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.65rem 0.85rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => setShowCloneAuth(!showCloneAuth)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: 0,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            fontSize: '0.86rem',
+                            fontWeight: 600,
+                            color: 'var(--text-primary)',
+                          }}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <ShieldCheck size={16} color="var(--primary)" />
+                            <span>Optional Credentials (Internal Network Shares)</span>
+                          </span>
+                          {showCloneAuth ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </button>
 
-                      {showCloneAuth && (
-                        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                          <div className="vcs-form-group">
-                            <label className="vcs-label">Username</label>
-                            <input
-                              className="vcs-input"
-                              placeholder="e.g. your-github-username"
-                              value={cloneData.username}
-                              onChange={(e) => setCloneData({ ...cloneData, username: e.target.value })}
-                              disabled={cloneLoading}
-                            />
+                        {showCloneAuth && (
+                          <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                            <div className="vcs-form-group">
+                              <label className="vcs-label">Username</label>
+                              <input
+                                className="vcs-input"
+                                placeholder="Username"
+                                value={cloneData.username}
+                                onChange={(e) => setCloneData({ ...cloneData, username: e.target.value })}
+                                disabled={cloneLoading}
+                              />
+                            </div>
+                            <div className="vcs-form-group">
+                              <label className="vcs-label">Password / Token</label>
+                              <input
+                                type="password"
+                                className="vcs-input"
+                                placeholder="Password or access token"
+                                value={cloneData.personalAccessToken}
+                                onChange={(e) => setCloneData({ ...cloneData, personalAccessToken: e.target.value })}
+                                disabled={cloneLoading}
+                              />
+                            </div>
                           </div>
-                          <div className="vcs-form-group">
-                            <label className="vcs-label">Personal Access Token (PAT)</label>
-                            <input
-                              type="password"
-                              className="vcs-input"
-                              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                              value={cloneData.personalAccessToken}
-                              onChange={(e) => setCloneData({ ...cloneData, personalAccessToken: e.target.value })}
-                              disabled={cloneLoading}
-                            />
-                            <span className="vcs-help-text">
-                              Used strictly in-memory during this clone operation; never saved or logged.
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
 
                     {/* ERROR ALERT */}
                     {cloneError && (

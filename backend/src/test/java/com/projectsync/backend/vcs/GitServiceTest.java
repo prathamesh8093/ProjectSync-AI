@@ -237,6 +237,32 @@ public class GitServiceTest {
     }
 
     @Test
+    void testCloneInternalRepositoryByName() {
+        // 1. Create a source repo
+        CreateRepoRequest srcReq = new CreateRepoRequest("internal-team-repo", "Self-hosted team codebase", "main", true);
+        RepositoryDetailsDto srcRepo = gitService.createRepository(srcReq, "team-lead");
+
+        // 2. Clone using solely the internal repository name
+        CloneRepoRequest cloneReq = new CloneRepoRequest();
+        cloneReq.setRemoteUrl("internal-team-repo"); // Internal repo name without any external URL
+        cloneReq.setName("my-forked-repo");
+        cloneReq.setDescription("Forked team codebase");
+
+        CloneResultDto cloneResult = gitService.cloneRepository(cloneReq, "student2");
+
+        assertNotNull(cloneResult);
+        assertNotNull(cloneResult.getRepository());
+        assertEquals("my-forked-repo", cloneResult.getRepository().getName());
+        assertEquals("student2", cloneResult.getRepository().getOwnerUsername());
+        assertTrue(cloneResult.getRepository().getRemoteUrl().contains("internal-team-repo"));
+        assertTrue(cloneResult.getCloneOutput().contains("Internal Repository [internal-team-repo]"));
+
+        Path clonedDir = Path.of(cloneResult.getRepository().getDiskPath());
+        assertTrue(Files.exists(clonedDir.resolve(".git")));
+        assertTrue(Files.exists(clonedDir.resolve("README.md")));
+    }
+
+    @Test
     void testStudentRepositoryIsolation() {
         // Alice creates a repo
         CreateRepoRequest reqAlice = new CreateRepoRequest("alice-project", "Alice repo", "main", true);
