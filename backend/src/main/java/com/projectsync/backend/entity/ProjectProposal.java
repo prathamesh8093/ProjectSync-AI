@@ -31,6 +31,9 @@ public class ProjectProposal {
     @Column(name = "status", nullable = false, length = 30)
     private String status;
 
+    @Column(name = "project_code", length = 32, unique = true)
+    private String projectCode;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "submitted_by")
     private User submittedBy;
@@ -63,6 +66,9 @@ public class ProjectProposal {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getProjectCode() { return projectCode; }
+    public void setProjectCode(String projectCode) { this.projectCode = projectCode; }
 
     public User getSubmittedBy() { return submittedBy; }
     public void setSubmittedBy(User submittedBy) { this.submittedBy = submittedBy; }

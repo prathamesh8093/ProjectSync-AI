@@ -13,6 +13,7 @@ public class RepositorySummaryDto {
     private boolean isClean;
     private Instant lastCommitDate;
     private String remoteUrl;
+    private String ownerUsername;
 
     public RepositorySummaryDto() {
     }
@@ -27,6 +28,20 @@ public class RepositorySummaryDto {
             boolean isClean,
             Instant lastCommitDate,
             String remoteUrl) {
+        this(id, name, description, diskPath, currentBranch, commitCount, isClean, lastCommitDate, remoteUrl, null);
+    }
+
+    public RepositorySummaryDto(
+            String id,
+            String name,
+            String description,
+            String diskPath,
+            String currentBranch,
+            int commitCount,
+            boolean isClean,
+            Instant lastCommitDate,
+            String remoteUrl,
+            String ownerUsername) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -36,6 +51,7 @@ public class RepositorySummaryDto {
         this.isClean = isClean;
         this.lastCommitDate = lastCommitDate;
         this.remoteUrl = remoteUrl;
+        this.ownerUsername = ownerUsername;
     }
 
     public String getId() {
@@ -108,5 +124,13 @@ public class RepositorySummaryDto {
 
     public void setRemoteUrl(String remoteUrl) {
         this.remoteUrl = remoteUrl;
+    }
+
+    public String getOwnerUsername() {
+        return ownerUsername;
+    }
+
+    public void setOwnerUsername(String ownerUsername) {
+        this.ownerUsername = ownerUsername;
     }
 }

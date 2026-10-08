@@ -12,6 +12,7 @@ public class ProjectProposalResponse {
     private String objectives;
     private String technologyStack;
     private String status;
+    private String projectCode;
     private UUID submittedBy;
     private OffsetDateTime submittedAt;
     private OffsetDateTime updatedAt;
@@ -41,6 +42,9 @@ public class ProjectProposalResponse {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getProjectCode() { return projectCode; }
+    public void setProjectCode(String projectCode) { this.projectCode = projectCode; }
 
     public UUID getSubmittedBy() { return submittedBy; }
     public void setSubmittedBy(UUID submittedBy) { this.submittedBy = submittedBy; }

@@ -375,3 +375,151 @@
     gap: 0.5rem;
   }
 }
+
+/* Project Selection Grid & Cards */
+.faculty-monitoring-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.faculty-monitoring-select-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.faculty-monitoring-select-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+.faculty-monitoring-select-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.faculty-monitoring-code-badge {
+  display: inline-block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid #bfdbfe;
+}
+
+.faculty-monitoring-select-title {
+  margin: 0 0 0.4rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.faculty-monitoring-select-team {
+  margin: 0 0 1.2rem;
+  color: #64748b;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.faculty-monitoring-select-meta {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+  padding: 0.85rem 0.5rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.faculty-monitoring-select-meta-item span {
+  display: block;
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.2rem;
+}
+
+.faculty-monitoring-select-meta-item strong {
+  display: block;
+  font-size: 1.05rem;
+  color: #0f172a;
+}
+
+.faculty-monitoring-select-action {
+  margin-top: auto;
+}
+
+.faculty-monitoring-select-action button {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+/* Top Nav & Switcher for Selected Project */
+.faculty-monitoring-top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.faculty-monitoring-nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.faculty-monitoring-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.faculty-monitoring-switcher label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.faculty-monitoring-switcher select {
+  padding: 0.45rem 0.85rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.faculty-monitoring-switcher select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}

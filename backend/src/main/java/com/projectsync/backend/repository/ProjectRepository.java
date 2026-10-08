@@ -15,4 +15,10 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     Optional<Project> findByTeam(Team team);
 
     boolean existsByProposal(ProjectProposal proposal);
+
+    Optional<Project> findByProjectCode(String projectCode);
+
+    Optional<Project> findByProjectCodeIgnoreCase(String projectCode);
+
+    boolean existsByProjectCode(String projectCode);
 }

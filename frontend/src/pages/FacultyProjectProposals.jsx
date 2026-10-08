@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   LayoutDashboard,
   UserRound,
@@ -198,7 +199,21 @@ function FacultyProjectProposals() {
             <div key={proposal.id} className="faculty-proposal-row">
               <div className="faculty-proposal-row-main">
                 <div className="faculty-proposal-row-top">
-                  <h3>{proposal.title}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                    <span style={{
+                      fontFamily: 'monospace',
+                      fontWeight: 700,
+                      fontSize: '0.82rem',
+                      background: '#f1f5f9',
+                      color: '#334155',
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '4px',
+                      border: '1px solid #cbd5e1',
+                    }}>
+                      {proposal.projectCode || proposal.id}
+                    </span>
+                    <h3>{proposal.title}</h3>
+                  </div>
 
                   <Badge tone={statusTone[proposal.status] || 'neutral'}>
                     {proposal.status}
@@ -242,11 +257,37 @@ function FacultyProjectProposals() {
           ) : detail ? (
             <>
               <div className="faculty-proposal-details-top">
-                <h2>{detail.title}</h2>
+                <div>
+                  <span style={{
+                    display: 'inline-block',
+                    fontFamily: 'monospace',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    background: '#f1f5f9',
+                    color: '#334155',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '4px',
+                    border: '1px solid #cbd5e1',
+                    marginBottom: '0.4rem',
+                  }}>
+                    ID: {detail.projectCode || detail.id}
+                  </span>
+                  <h2>{detail.title}</h2>
+                </div>
 
                 <Badge tone={statusTone[detail.status] || 'neutral'}>
                   {detail.status}
                 </Badge>
+              </div>
+
+              <div className="faculty-proposal-field">
+                <span className="faculty-proposal-field-label">
+                  Project Code / ID
+                </span>
+
+                <p className="faculty-proposal-field-value" style={{ fontFamily: 'monospace', fontWeight: 700, color: '#0369a1' }}>
+                  {detail.projectCode || detail.id}
+                </p>
               </div>
 
               <div className="faculty-proposal-field">
@@ -396,6 +437,31 @@ function FacultyProjectProposals() {
                       {reviewing ? 'Submitting...' : 'Reject'}
                     </Button>
                   </div>
+                </div>
+              )}
+
+              {detail.status === 'APPROVED' && (
+                <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '0.85rem', color: '#64748b' }}>
+                    Proposal is approved. Track its progress in the monitoring dashboard.
+                  </span>
+                  <Link
+                    to={`/faculty/projects?projectId=${detail.projectCode || detail.id}`}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      background: '#2563eb',
+                      color: '#ffffff',
+                      padding: '0.45rem 0.9rem',
+                      borderRadius: '6px',
+                      textDecoration: 'none',
+                      fontWeight: 500,
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    Monitor Project Progress →
+                  </Link>
                 </div>
               )}
 

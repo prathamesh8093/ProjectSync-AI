@@ -36,18 +36,21 @@ public class ProjectService {
     private final TaskRepository taskRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
+    private final ProjectCodeGenerator projectCodeGenerator;
 
     public ProjectService(
             ProjectRepository projectRepository,
             ProjectProposalRepository proposalRepository,
             TaskRepository taskRepository,
             TeamMemberRepository teamMemberRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            ProjectCodeGenerator projectCodeGenerator) {
         this.projectRepository = projectRepository;
         this.proposalRepository = proposalRepository;
         this.taskRepository = taskRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.userRepository = userRepository;
+        this.projectCodeGenerator = projectCodeGenerator;
     }
 
     @Transactional
@@ -55,8 +58,7 @@ public class ProjectService {
         TeamMember leaderMembership = resolveLeaderMembership(authentication);
         Team team = leaderMembership.getTeam();
 
-        ProjectProposal proposal = proposalRepository.findById(request.getProposalId())
-                .orElseThrow(() -> new ResourceNotFoundException("Proposal not found."));
+        ProjectProposal proposal = resolveProposal(request.getProposalId(), team);
 
         if (!proposal.getTeam().getId().equals(team.getId())) {
             throw new ForbiddenOperationException("You do not have access to this proposal.");
@@ -68,10 +70,16 @@ public class ProjectService {
             throw new ConflictException("An Agile project already exists for this proposal.");
         }
 
+        if (proposal.getProjectCode() == null || proposal.getProjectCode().isBlank()) {
+            proposal.setProjectCode(projectCodeGenerator.generateNextProjectCode());
+            proposal = proposalRepository.save(proposal);
+        }
+
         OffsetDateTime now = OffsetDateTime.now();
         Project project = new Project();
         project.setTeam(team);
         project.setProposal(proposal);
+        project.setProjectCode(proposal.getProjectCode());
         project.setName(request.getName().trim());
         project.setDescription(request.getDescription());
         project.setStatus(PROJECT_STATUS_NOT_STARTED);
@@ -80,6 +88,37 @@ public class ProjectService {
 
         project = projectRepository.save(project);
         return toResponse(project);
+    }
+
+    private ProjectProposal resolveProposal(String identifier, Team team) {
+        if (identifier == null || identifier.isBlank()) {
+            throw new com.projectsync.backend.exception.BadRequestException("Proposal ID or Project Code is required.");
+        }
+        String clean = identifier.trim();
+
+        java.util.Optional<ProjectProposal> byCode = proposalRepository.findByProjectCodeIgnoreCase(clean);
+        if (byCode.isPresent()) {
+            return byCode.get();
+        }
+
+        try {
+            UUID uuid = UUID.fromString(clean);
+            java.util.Optional<ProjectProposal> byUuid = proposalRepository.findById(uuid);
+            if (byUuid.isPresent()) {
+                return byUuid.get();
+            }
+        } catch (IllegalArgumentException ignored) {
+        }
+
+        java.util.Optional<ProjectProposal> byTeam = proposalRepository.findByTeam(team);
+        if (byTeam.isPresent()) {
+            ProjectProposal tp = byTeam.get();
+            if (clean.equalsIgnoreCase(tp.getProjectCode()) || clean.equalsIgnoreCase(String.valueOf(tp.getId()))) {
+                return tp;
+            }
+        }
+
+        throw new ResourceNotFoundException("No proposal found matching ID or Project Code '" + clean + "'.");
     }
 
     @Transactional(readOnly = true)
@@ -264,6 +303,17 @@ public class ProjectService {
         response.setId(project.getId());
         response.setTeamId(project.getTeam().getId());
         response.setProposalId(project.getProposal().getId());
+        if (project.getProjectCode() == null && project.getProposal() != null) {
+            String code = project.getProposal().getProjectCode();
+            if (code == null || code.isBlank()) {
+                code = projectCodeGenerator.generateNextProjectCode();
+                project.getProposal().setProjectCode(code);
+                proposalRepository.save(project.getProposal());
+            }
+            project.setProjectCode(code);
+            project = projectRepository.save(project);
+        }
+        response.setProjectCode(project.getProjectCode());
         response.setName(project.getName());
         response.setDescription(project.getDescription());
         response.setStatus(project.getStatus());

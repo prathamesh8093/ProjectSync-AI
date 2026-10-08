@@ -17,6 +17,7 @@ public class RepositoryDetailsDto {
     private Instant createdAt;
     private Instant updatedAt;
     private List<RemoteConfigDto> remotes;
+    private String ownerUsername;
 
     public RepositoryDetailsDto() {
     }
@@ -34,6 +35,23 @@ public class RepositoryDetailsDto {
             Instant createdAt,
             Instant updatedAt,
             List<RemoteConfigDto> remotes) {
+        this(id, name, description, diskPath, defaultBranch, currentBranch, isClean, commitCount, remoteUrl, createdAt, updatedAt, remotes, null);
+    }
+
+    public RepositoryDetailsDto(
+            String id,
+            String name,
+            String description,
+            String diskPath,
+            String defaultBranch,
+            String currentBranch,
+            boolean isClean,
+            int commitCount,
+            String remoteUrl,
+            Instant createdAt,
+            Instant updatedAt,
+            List<RemoteConfigDto> remotes,
+            String ownerUsername) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -46,6 +64,7 @@ public class RepositoryDetailsDto {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.remotes = remotes;
+        this.ownerUsername = ownerUsername;
     }
 
     public String getId() {
@@ -142,5 +161,13 @@ public class RepositoryDetailsDto {
 
     public void setRemotes(List<RemoteConfigDto> remotes) {
         this.remotes = remotes;
+    }
+
+    public String getOwnerUsername() {
+        return ownerUsername;
+    }
+
+    public void setOwnerUsername(String ownerUsername) {
+        this.ownerUsername = ownerUsername;
     }
 }

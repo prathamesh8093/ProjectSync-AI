@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   LayoutDashboard,
   UserRound,
@@ -9,6 +10,9 @@ import {
   CalendarDays,
   ListChecks,
   UserCheck,
+  ArrowLeft,
+  ArrowRight,
+  FolderGit2,
 } from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -98,6 +102,16 @@ function FacultyProjectMonitoring() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const selectedProjectId = searchParams.get('projectId')
+  const selectedProject = projects.find(
+    (p) =>
+      String(p.projectId) === String(selectedProjectId) ||
+      (p.projectCode &&
+        String(p.projectCode).toLowerCase() ===
+          String(selectedProjectId).toLowerCase())
+  )
 
   const loadProjects = async (showRefreshing = false) => {
     if (showRefreshing) {
@@ -129,316 +143,412 @@ function FacultyProjectMonitoring() {
 
   return (
     <DashboardLayout navItems={facultyNavItems}>
-      <div className="faculty-monitoring-header">
-        <div>
-          <h1 className="content-title">Faculty Project Monitoring</h1>
-          <p className="content-subtitle">
-            Monitor approved student projects, sprints, tasks, and current
-            progress.
-          </p>
-        </div>
+      {!selectedProject ? (
+        <>
+          <div className="faculty-monitoring-header">
+            <div>
+              <h1 className="content-title">Faculty Project Monitoring</h1>
+              <p className="content-subtitle">
+                Select an approved student project to view its real-time progress, sprints, and task deliverables.
+              </p>
+            </div>
 
-        <Button
-          variant="secondary"
-          onClick={() => loadProjects(true)}
-          loading={refreshing}
-        >
-          <RefreshCw size={16} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </Button>
-      </div>
+            <Button
+              variant="secondary"
+              onClick={() => loadProjects(true)}
+              loading={refreshing}
+            >
+              <RefreshCw size={16} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+          </div>
 
-      {loading ? (
-        <div className="faculty-monitoring-card">
-          <p className="faculty-monitoring-loading">
-            Loading project monitoring data...
-          </p>
-        </div>
-      ) : error ? (
-        <div className="faculty-monitoring-card">
-          <p className="faculty-monitoring-error">{error}</p>
-        </div>
-      ) : projects.length === 0 ? (
-        <div className="faculty-monitoring-empty-card">
-          <h2>No approved projects</h2>
-          <p>
-            Projects created from approved proposals will appear here for
-            faculty monitoring.
-          </p>
-        </div>
+          {loading ? (
+            <div className="faculty-monitoring-card">
+              <p className="faculty-monitoring-loading">
+                Loading approved student projects...
+              </p>
+            </div>
+          ) : error ? (
+            <div className="faculty-monitoring-card">
+              <p className="faculty-monitoring-error">{error}</p>
+            </div>
+          ) : projects.length === 0 ? (
+            <div className="faculty-monitoring-empty-card">
+              <h2>No approved projects</h2>
+              <p>
+                Projects created from approved proposals will appear here for faculty monitoring.
+              </p>
+            </div>
+          ) : (
+            <div className="faculty-monitoring-selection-grid">
+              {projects.map((project) => (
+                <div
+                  key={project.projectId}
+                  className="faculty-monitoring-select-card"
+                >
+                  <div className="faculty-monitoring-select-card-header">
+                    <span className="faculty-monitoring-code-badge">
+                      {project.projectCode || 'PRJ-CODE'}
+                    </span>
+                    <Badge
+                      tone={
+                        projectStatusTone[project.projectStatus] || 'neutral'
+                      }
+                    >
+                      {project.projectStatus}
+                    </Badge>
+                  </div>
+
+                  <h3 className="faculty-monitoring-select-title">
+                    {project.projectName}
+                  </h3>
+                  <p className="faculty-monitoring-select-team">
+                    <Users size={15} /> Team: {project.teamName}
+                  </p>
+
+                  <div className="faculty-monitoring-select-meta">
+                    <div className="faculty-monitoring-select-meta-item">
+                      <span>Sprints</span>
+                      <strong>{(project.sprints || []).length}</strong>
+                    </div>
+                    <div className="faculty-monitoring-select-meta-item">
+                      <span>Total Tasks</span>
+                      <strong>{project.totalTasks || 0}</strong>
+                    </div>
+                    <div className="faculty-monitoring-select-meta-item">
+                      <span>Completed</span>
+                      <strong>{project.completedTasks || 0}</strong>
+                    </div>
+                  </div>
+
+                  <div className="faculty-monitoring-select-action">
+                    <Button
+                      variant="primary"
+                      onClick={() =>
+                        setSearchParams({
+                          projectId: project.projectCode || project.projectId,
+                        })
+                      }
+                    >
+                      Monitor Project Progress
+                      <ArrowRight size={16} />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
       ) : (
-        <div className="faculty-monitoring-list">
-          {projects.map((project) => {
-            const sprints = project.sprints || []
-            const tasks = project.tasks || []
+        <>
+          <div className="faculty-monitoring-top-nav">
+            <Button
+              variant="secondary"
+              onClick={() => setSearchParams({})}
+            >
+              <ArrowLeft size={16} />
+              Back to Projects List
+            </Button>
 
-            return (
-              <div
-                key={project.projectId}
-                className="faculty-monitoring-project-card"
+            <div className="faculty-monitoring-nav-right">
+              <div className="faculty-monitoring-switcher">
+                <label htmlFor="project-switcher">Switch Project:</label>
+                <select
+                  id="project-switcher"
+                  value={selectedProject.projectCode || selectedProject.projectId}
+                  onChange={(e) =>
+                    setSearchParams({ projectId: e.target.value })
+                  }
+                >
+                  {projects.map((p) => (
+                    <option
+                      key={p.projectId}
+                      value={p.projectCode || p.projectId}
+                    >
+                      {p.projectCode ? `[${p.projectCode}] ` : ''}
+                      {p.projectName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <Button
+                variant="secondary"
+                onClick={() => loadProjects(true)}
+                loading={refreshing}
               >
-                <div className="faculty-monitoring-project-top">
-                  <div>
-                    <h2>{project.projectName}</h2>
-                    <p className="faculty-monitoring-team">
-                      {project.teamName}
-                    </p>
-                  </div>
+                <RefreshCw size={16} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </Button>
+            </div>
+          </div>
 
-                  <Badge
-                    tone={
-                      projectStatusTone[project.projectStatus] || 'neutral'
-                    }
-                  >
-                    {project.projectStatus}
-                  </Badge>
+          <div className="faculty-monitoring-project-card">
+            <div className="faculty-monitoring-project-top">
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
+                  <span className="faculty-monitoring-code-badge">
+                    {selectedProject.projectCode || 'PRJ-CODE'}
+                  </span>
+                  <h2 style={{ margin: 0 }}>{selectedProject.projectName}</h2>
                 </div>
+                <p className="faculty-monitoring-team">
+                  Team: {selectedProject.teamName}
+                </p>
+              </div>
 
-                <div className="faculty-monitoring-progress-section">
-                  <div className="faculty-monitoring-progress-header">
-                    <span>Overall Progress</span>
-                    <strong>{project.overallProgress}%</strong>
-                  </div>
+              <Badge
+                tone={
+                  projectStatusTone[selectedProject.projectStatus] || 'neutral'
+                }
+              >
+                {selectedProject.projectStatus}
+              </Badge>
+            </div>
 
-                  <div className="faculty-monitoring-progress-track">
+            <div className="faculty-monitoring-progress-section">
+              <div className="faculty-monitoring-progress-header">
+                <span>Overall Progress</span>
+                <strong>{selectedProject.overallProgress}%</strong>
+              </div>
+
+              <div className="faculty-monitoring-progress-track">
+                <div
+                  className="faculty-monitoring-progress-fill"
+                  style={{
+                    width: `${clampProgress(selectedProject.overallProgress)}%`,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="faculty-monitoring-stats">
+              <div className="faculty-monitoring-stat">
+                <span>Total Tasks</span>
+                <strong>{selectedProject.totalTasks}</strong>
+              </div>
+
+              <div className="faculty-monitoring-stat">
+                <span>Completed</span>
+                <strong>{selectedProject.completedTasks}</strong>
+              </div>
+
+              <div className="faculty-monitoring-stat">
+                <span>In Progress</span>
+                <strong>{selectedProject.inProgressTasks}</strong>
+              </div>
+
+              <div className="faculty-monitoring-stat">
+                <span>In Review</span>
+                <strong>{selectedProject.inReviewTasks}</strong>
+              </div>
+
+              <div className="faculty-monitoring-stat">
+                <span>To Do</span>
+                <strong>{selectedProject.todoTasks}</strong>
+              </div>
+            </div>
+
+            <div className="faculty-monitoring-section">
+              <div className="faculty-monitoring-section-header">
+                <div>
+                  <h3>
+                    <CalendarDays size={18} />
+                    Sprint Monitoring
+                  </h3>
+                  <p>
+                    Review sprint schedules, status, workload, and progress.
+                  </p>
+                </div>
+              </div>
+
+              {(selectedProject.sprints || []).length === 0 ? (
+                <div className="faculty-monitoring-section-empty">
+                  No sprints have been created for this project.
+                </div>
+              ) : (
+                <div className="faculty-monitoring-sprint-list">
+                  {selectedProject.sprints.map((sprint) => (
                     <div
-                      className="faculty-monitoring-progress-fill"
-                      style={{
-                        width: `${clampProgress(project.overallProgress)}%`,
-                      }}
-                    />
-                  </div>
-                </div>
+                      key={sprint.sprintId}
+                      className="faculty-monitoring-sprint-card"
+                    >
+                      <div className="faculty-monitoring-sprint-top">
+                        <div>
+                          <h4>{sprint.name}</h4>
 
-                <div className="faculty-monitoring-stats">
-                  <div className="faculty-monitoring-stat">
-                    <span>Total Tasks</span>
-                    <strong>{project.totalTasks}</strong>
-                  </div>
+                          {sprint.goal && (
+                            <p className="faculty-monitoring-sprint-goal">
+                              {sprint.goal}
+                            </p>
+                          )}
+                        </div>
 
-                  <div className="faculty-monitoring-stat">
-                    <span>Completed</span>
-                    <strong>{project.completedTasks}</strong>
-                  </div>
-
-                  <div className="faculty-monitoring-stat">
-                    <span>In Progress</span>
-                    <strong>{project.inProgressTasks}</strong>
-                  </div>
-
-                  <div className="faculty-monitoring-stat">
-                    <span>In Review</span>
-                    <strong>{project.inReviewTasks}</strong>
-                  </div>
-
-                  <div className="faculty-monitoring-stat">
-                    <span>To Do</span>
-                    <strong>{project.todoTasks}</strong>
-                  </div>
-                </div>
-
-                <div className="faculty-monitoring-section">
-                  <div className="faculty-monitoring-section-header">
-                    <div>
-                      <h3>
-                        <CalendarDays size={18} />
-                        Sprint Monitoring
-                      </h3>
-                      <p>
-                        Review sprint schedules, status, workload, and
-                        progress.
-                      </p>
-                    </div>
-                  </div>
-
-                  {sprints.length === 0 ? (
-                    <div className="faculty-monitoring-section-empty">
-                      No sprints have been created for this project.
-                    </div>
-                  ) : (
-                    <div className="faculty-monitoring-sprint-list">
-                      {sprints.map((sprint) => (
-                        <div
-                          key={sprint.sprintId}
-                          className="faculty-monitoring-sprint-card"
+                        <Badge
+                          tone={
+                            sprintStatusTone[sprint.status] || 'neutral'
+                          }
                         >
-                          <div className="faculty-monitoring-sprint-top">
-                            <div>
-                              <h4>{sprint.name}</h4>
+                          {sprint.status}
+                        </Badge>
+                      </div>
 
-                              {sprint.goal && (
-                                <p className="faculty-monitoring-sprint-goal">
-                                  {sprint.goal}
-                                </p>
-                              )}
-                            </div>
+                      <div className="faculty-monitoring-sprint-meta">
+                        <div>
+                          <span>Start</span>
+                          <strong>{formatDate(sprint.startDate)}</strong>
+                        </div>
+
+                        <div>
+                          <span>End</span>
+                          <strong>{formatDate(sprint.endDate)}</strong>
+                        </div>
+
+                        <div>
+                          <span>Tasks</span>
+                          <strong>{sprint.totalTasks}</strong>
+                        </div>
+
+                        <div>
+                          <span>Completed</span>
+                          <strong>{sprint.completedTasks}</strong>
+                        </div>
+                      </div>
+
+                      <div className="faculty-monitoring-sprint-progress">
+                        <div className="faculty-monitoring-progress-header">
+                          <span>Sprint Progress</span>
+                          <strong>{sprint.progress}%</strong>
+                        </div>
+
+                        <div className="faculty-monitoring-progress-track">
+                          <div
+                            className="faculty-monitoring-progress-fill"
+                            style={{
+                              width: `${clampProgress(sprint.progress)}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="faculty-monitoring-sprint-stats">
+                        <span>
+                          To Do: <strong>{sprint.todoTasks}</strong>
+                        </span>
+                        <span>
+                          In Progress:{' '}
+                          <strong>{sprint.inProgressTasks}</strong>
+                        </span>
+                        <span>
+                          In Review: <strong>{sprint.inReviewTasks}</strong>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="faculty-monitoring-section">
+              <div className="faculty-monitoring-section-header">
+                <div>
+                  <h3>
+                    <ListChecks size={18} />
+                    Task Monitoring
+                  </h3>
+                  <p>
+                    Review task assignments, priorities, statuses, and
+                    progress.
+                  </p>
+                </div>
+              </div>
+
+              {(selectedProject.tasks || []).length === 0 ? (
+                <div className="faculty-monitoring-section-empty">
+                  No tasks have been created for this project.
+                </div>
+              ) : (
+                <div className="faculty-monitoring-task-list">
+                  {selectedProject.tasks.map((task) => (
+                    <div
+                      key={task.taskId}
+                      className="faculty-monitoring-task-card"
+                    >
+                      <div className="faculty-monitoring-task-main">
+                        <div className="faculty-monitoring-task-title-row">
+                          <h4>{task.title}</h4>
+
+                          <div className="faculty-monitoring-task-badges">
+                            <Badge
+                              tone={
+                                priorityTone[task.priority] || 'neutral'
+                              }
+                            >
+                              {task.priority}
+                            </Badge>
 
                             <Badge
                               tone={
-                                sprintStatusTone[sprint.status] || 'neutral'
+                                taskStatusTone[task.status] || 'neutral'
                               }
                             >
-                              {sprint.status}
+                              {task.status}
                             </Badge>
                           </div>
+                        </div>
 
-                          <div className="faculty-monitoring-sprint-meta">
-                            <div>
-                              <span>Start</span>
-                              <strong>{formatDate(sprint.startDate)}</strong>
-                            </div>
+                        {task.description && (
+                          <p className="faculty-monitoring-task-description">
+                            {task.description}
+                          </p>
+                        )}
 
-                            <div>
-                              <span>End</span>
-                              <strong>{formatDate(sprint.endDate)}</strong>
-                            </div>
-
-                            <div>
-                              <span>Tasks</span>
-                              <strong>{sprint.totalTasks}</strong>
-                            </div>
-
-                            <div>
-                              <span>Completed</span>
-                              <strong>{sprint.completedTasks}</strong>
-                            </div>
+                        <div className="faculty-monitoring-task-meta">
+                          <div>
+                            <ListChecks size={15} />
+                            <span>
+                              Sprint:{' '}
+                              <strong>
+                                {task.sprintName || 'Unassigned'}
+                              </strong>
+                            </span>
                           </div>
 
-                          <div className="faculty-monitoring-sprint-progress">
-                            <div className="faculty-monitoring-progress-header">
-                              <span>Sprint Progress</span>
-                              <strong>{sprint.progress}%</strong>
-                            </div>
-
-                            <div className="faculty-monitoring-progress-track">
-                              <div
-                                className="faculty-monitoring-progress-fill"
-                                style={{
-                                  width: `${clampProgress(sprint.progress)}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="faculty-monitoring-sprint-stats">
+                          <div>
+                            <UserCheck size={15} />
                             <span>
-                              To Do: <strong>{sprint.todoTasks}</strong>
-                            </span>
-                            <span>
-                              In Progress:{' '}
-                              <strong>{sprint.inProgressTasks}</strong>
-                            </span>
-                            <span>
-                              In Review: <strong>{sprint.inReviewTasks}</strong>
+                              Assigned to:{' '}
+                              <strong>
+                                {task.assignedToName || 'Unassigned'}
+                              </strong>
                             </span>
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                      </div>
 
-                <div className="faculty-monitoring-section">
-                  <div className="faculty-monitoring-section-header">
-                    <div>
-                      <h3>
-                        <ListChecks size={18} />
-                        Task Monitoring
-                      </h3>
-                      <p>
-                        Review task assignments, priorities, statuses, and
-                        progress.
-                      </p>
-                    </div>
-                  </div>
-
-                  {tasks.length === 0 ? (
-                    <div className="faculty-monitoring-section-empty">
-                      No tasks have been created for this project.
-                    </div>
-                  ) : (
-                    <div className="faculty-monitoring-task-list">
-                      {tasks.map((task) => (
-                        <div
-                          key={task.taskId}
-                          className="faculty-monitoring-task-card"
-                        >
-                          <div className="faculty-monitoring-task-main">
-                            <div className="faculty-monitoring-task-title-row">
-                              <h4>{task.title}</h4>
-
-                              <div className="faculty-monitoring-task-badges">
-                                <Badge
-                                  tone={
-                                    priorityTone[task.priority] || 'neutral'
-                                  }
-                                >
-                                  {task.priority}
-                                </Badge>
-
-                                <Badge
-                                  tone={
-                                    taskStatusTone[task.status] || 'neutral'
-                                  }
-                                >
-                                  {task.status}
-                                </Badge>
-                              </div>
-                            </div>
-
-                            {task.description && (
-                              <p className="faculty-monitoring-task-description">
-                                {task.description}
-                              </p>
-                            )}
-
-                            <div className="faculty-monitoring-task-meta">
-                              <div>
-                                <ListChecks size={15} />
-                                <span>
-                                  Sprint:{' '}
-                                  <strong>
-                                    {task.sprintName || 'Unassigned'}
-                                  </strong>
-                                </span>
-                              </div>
-
-                              <div>
-                                <UserCheck size={15} />
-                                <span>
-                                  Assigned to:{' '}
-                                  <strong>
-                                    {task.assignedToName || 'Unassigned'}
-                                  </strong>
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="faculty-monitoring-task-progress">
-                            <div className="faculty-monitoring-progress-header">
-                              <span>Progress</span>
-                              <strong>{task.progress}%</strong>
-                            </div>
-
-                            <div className="faculty-monitoring-progress-track">
-                              <div
-                                className="faculty-monitoring-progress-fill"
-                                style={{
-                                  width: `${clampProgress(task.progress)}%`,
-                                }}
-                              />
-                            </div>
-                          </div>
+                      <div className="faculty-monitoring-task-progress">
+                        <div className="faculty-monitoring-progress-header">
+                          <span>Progress</span>
+                          <strong>{task.progress}%</strong>
                         </div>
-                      ))}
+
+                        <div className="faculty-monitoring-progress-track">
+                          <div
+                            className="faculty-monitoring-progress-fill"
+                            style={{
+                              width: `${clampProgress(task.progress)}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
     </DashboardLayout>
   )

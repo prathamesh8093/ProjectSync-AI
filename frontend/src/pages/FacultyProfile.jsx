@@ -13,7 +13,7 @@ const facultyNavItems = [
   { label: 'Faculty Profile', icon: UserRound, path: '/faculty/profile' },
   { label: 'Student Teams', icon: Users, path: null },
   { label: 'Project Proposals', icon: FileText, path: '/faculty/proposals' },
-  { label: 'Project Monitoring', icon: ClipboardCheck, path: null },
+  { label: 'Project Monitoring', icon: ClipboardCheck, path: '/faculty/projects' },
 ]
 
 const emptyForm = { facultyId: '', department: '', designation: '' }

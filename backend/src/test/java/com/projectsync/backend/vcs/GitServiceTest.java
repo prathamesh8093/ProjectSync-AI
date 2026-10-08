@@ -235,4 +235,31 @@ public class GitServiceTest {
         assertTrue(Files.exists(clonedDir.resolve(".git")));
         assertTrue(Files.exists(clonedDir.resolve("README.md")));
     }
+
+    @Test
+    void testStudentRepositoryIsolation() {
+        // Alice creates a repo
+        CreateRepoRequest reqAlice = new CreateRepoRequest("alice-project", "Alice repo", "main", true);
+        gitService.createRepository(reqAlice, "alice@student.com");
+
+        // Bob creates a repo
+        CreateRepoRequest reqBob = new CreateRepoRequest("bob-project", "Bob repo", "main", true);
+        gitService.createRepository(reqBob, "bob@student.com");
+
+        // When Alice (student) lists repos, only Alice's repo should be returned
+        List<RepositorySummaryDto> aliceRepos = gitService.listRepositories("alice@student.com", false);
+        assertEquals(1, aliceRepos.size());
+        assertEquals("alice-project", aliceRepos.get(0).getName());
+        assertEquals("alice@student.com", aliceRepos.get(0).getOwnerUsername());
+
+        // When Bob (student) lists repos, only Bob's repo should be returned
+        List<RepositorySummaryDto> bobRepos = gitService.listRepositories("bob@student.com", false);
+        assertEquals(1, bobRepos.size());
+        assertEquals("bob-project", bobRepos.get(0).getName());
+        assertEquals("bob@student.com", bobRepos.get(0).getOwnerUsername());
+
+        // When Faculty lists repos, all repos are visible
+        List<RepositorySummaryDto> facultyRepos = gitService.listRepositories("faculty@prof.com", true);
+        assertEquals(2, facultyRepos.size());
+    }
 }

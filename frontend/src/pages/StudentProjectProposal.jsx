@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, UserRound, Users, FileText, ListChecks } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import {
+  LayoutDashboard,
+  UserRound,
+  Users,
+  FileText,
+  ListChecks,
+  GitBranch,
+  Copy,
+  Check,
+  CheckCircle2,
+  ArrowRight,
+} from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import {
@@ -21,6 +33,7 @@ const studentNavItems = [
   { label: 'My Team', icon: Users, path: '/student/team' },
   { label: 'Project Proposal', icon: FileText, path: '/student/proposal' },
   { label: 'Tasks / Projects', icon: ListChecks, path: '/student/projects' },
+  { label: 'Version Control (VCS)', icon: GitBranch, path: '/student/vcs' },
 ]
 
 const emptyForm = {
@@ -82,6 +95,7 @@ function StudentProjectProposal() {
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -497,16 +511,32 @@ function StudentProjectProposal() {
 
           <div className="proposal-header-card">
             <div className="proposal-header-top">
-              <h2>{proposal.title}</h2>
-
-              <Badge
-                tone={
-                  statusTone[proposal.status] ||
-                  'neutral'
-                }
-              >
-                {proposal.status}
-              </Badge>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.35rem' }}>
+                  <span style={{
+                    fontFamily: 'monospace',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    background: '#f1f5f9',
+                    color: '#334155',
+                    padding: '0.2rem 0.6rem',
+                    borderRadius: '4px',
+                    letterSpacing: '0.04em',
+                    border: '1px solid #cbd5e1',
+                  }}>
+                    ID: {proposal.projectCode || proposal.id}
+                  </span>
+                  <Badge
+                    tone={
+                      statusTone[proposal.status] ||
+                      'neutral'
+                    }
+                  >
+                    {proposal.status}
+                  </Badge>
+                </div>
+                <h2>{proposal.title}</h2>
+              </div>
             </div>
 
             {proposal.submittedAt && (
@@ -522,6 +552,91 @@ function StudentProjectProposal() {
               </p>
             )}
           </div>
+
+          {proposal.status === 'APPROVED' && (
+            <div style={{
+              background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+              border: '1px solid #86efac',
+              borderRadius: '10px',
+              padding: '1.25rem 1.5rem',
+              marginBottom: '1.5rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '1rem',
+              boxShadow: '0 2px 6px rgba(16, 185, 129, 0.08)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.85rem' }}>
+                <div style={{
+                  background: '#10b981',
+                  color: '#ffffff',
+                  borderRadius: '50%',
+                  padding: '0.35rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: '0.15rem'
+                }}>
+                  <CheckCircle2 size={20} />
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#065f46' }}>
+                    Proposal Approved — Official Project ID
+                  </h4>
+                  <p style={{ margin: '0.25rem 0 0', fontSize: '0.86rem', color: '#047857' }}>
+                    Use this clean ID to initialize and link your Agile workspace in Tasks / Projects.
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.65rem' }}>
+                    <code style={{
+                      fontFamily: 'monospace',
+                      fontSize: '1.15rem',
+                      fontWeight: 700,
+                      background: '#ffffff',
+                      color: '#047857',
+                      padding: '0.3rem 0.85rem',
+                      borderRadius: '6px',
+                      border: '1px solid #a7f3d0',
+                      letterSpacing: '0.05em'
+                    }}>
+                      {proposal.projectCode || proposal.id}
+                    </code>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        navigator.clipboard.writeText(proposal.projectCode || proposal.id)
+                        setCopied(true)
+                        setTimeout(() => setCopied(false), 2500)
+                      }}
+                    >
+                      {copied ? <Check size={14} color="#10b981" /> : <Copy size={14} />}
+                      <span style={{ marginLeft: '0.35rem' }}>{copied ? 'Copied ID!' : 'Copy ID'}</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <Link
+                to="/student/projects"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  background: '#059669',
+                  color: '#ffffff',
+                  padding: '0.6rem 1.1rem',
+                  borderRadius: '6px',
+                  fontWeight: 600,
+                  fontSize: '0.88rem',
+                  textDecoration: 'none',
+                }}
+              >
+                <span>Open Agile Workspace</span>
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          )}
 
           {!editing ? (
             <>

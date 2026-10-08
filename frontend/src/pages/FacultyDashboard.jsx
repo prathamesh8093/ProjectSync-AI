@@ -48,8 +48,8 @@ function FacultyDashboard() {
         <Link to="/faculty/projects" className="dashboard-card">
           <h2>Project Monitoring</h2>
           <p>
-            Monitor approved student projects, task progress, and project
-            status.
+            Select an approved student project to monitor its real-time
+            progress, sprints, and task deliverables.
           </p>
         </Link>
       </div>

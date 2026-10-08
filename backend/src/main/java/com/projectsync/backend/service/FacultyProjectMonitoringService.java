@@ -138,6 +138,12 @@ public class FacultyProjectMonitoringService {
                         inReviewTasks
                 );
 
+        String code = project.getProjectCode();
+        if (code == null && project.getProposal() != null) {
+            code = project.getProposal().getProjectCode();
+        }
+        response.setProjectCode(code);
+
         response.setSprints(buildSprintMonitoringResponses(project));
         response.setTasks(buildTaskMonitoringResponses(tasks));
 

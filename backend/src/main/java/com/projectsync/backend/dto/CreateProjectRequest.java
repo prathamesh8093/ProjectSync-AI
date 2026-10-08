@@ -8,8 +8,8 @@ import java.util.UUID;
 
 public class CreateProjectRequest {
 
-    @NotNull(message = "Proposal ID is required")
-    private UUID proposalId;
+    @NotBlank(message = "Proposal ID or Project Code is required")
+    private String proposalId;
 
     @NotBlank(message = "Project name is required")
     @Size(max = 255, message = "Project name must not exceed 255 characters")
@@ -17,11 +17,11 @@ public class CreateProjectRequest {
 
     private String description;
 
-    public UUID getProposalId() {
+    public String getProposalId() {
         return proposalId;
     }
 
-    public void setProposalId(UUID proposalId) {
+    public void setProposalId(String proposalId) {
         this.proposalId = proposalId;
     }
 

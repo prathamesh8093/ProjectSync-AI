@@ -8,6 +8,7 @@ public class ProjectResponse {
     private UUID id;
     private UUID teamId;
     private UUID proposalId;
+    private String projectCode;
     private String name;
     private String description;
     private String status;
@@ -36,6 +37,14 @@ public class ProjectResponse {
 
     public void setProposalId(UUID proposalId) {
         this.proposalId = proposalId;
+    }
+
+    public String getProjectCode() {
+        return projectCode;
+    }
+
+    public void setProjectCode(String projectCode) {
+        this.projectCode = projectCode;
     }
 
     public String getName() {

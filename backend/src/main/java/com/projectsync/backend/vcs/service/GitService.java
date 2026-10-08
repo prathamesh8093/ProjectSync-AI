@@ -374,10 +374,28 @@ public class GitService {
     }
 
     public List<RepositorySummaryDto> listRepositories() {
+        return listRepositories(null, true);
+    }
+
+    public List<RepositorySummaryDto> listRepositories(String username, boolean isFacultyOrAdmin) {
         List<RepositoryMetadata> all = metadataStore.findAll();
         List<RepositorySummaryDto> results = new ArrayList<>();
 
         for (RepositoryMetadata meta : all) {
+            // Role-based isolation: students can only see repositories they own
+            if (!isFacultyOrAdmin && username != null && !username.isBlank()) {
+                String owner = meta.getOwnerUsername();
+                if ("local-developer".equalsIgnoreCase(username)) {
+                    if (owner != null && !owner.equalsIgnoreCase("local-developer")) {
+                        continue;
+                    }
+                } else {
+                    if (owner == null || !owner.equalsIgnoreCase(username)) {
+                        continue;
+                    }
+                }
+            }
+
             File dir = new File(meta.getDiskPath());
             if (!dir.exists()) {
                 results.add(new RepositorySummaryDto(
@@ -389,7 +407,8 @@ public class GitService {
                         0,
                         false,
                         meta.getUpdatedAt(),
-                        meta.getRemoteUrl()
+                        meta.getRemoteUrl(),
+                        meta.getOwnerUsername()
                 ));
                 continue;
             }
@@ -430,7 +449,8 @@ public class GitService {
                         commitCount,
                         isClean,
                         lastCommitDate,
-                        remoteUrl != null ? remoteUrl : meta.getRemoteUrl()
+                        remoteUrl != null ? remoteUrl : meta.getRemoteUrl(),
+                        meta.getOwnerUsername()
                 ));
             } catch (Exception e) {
                 results.add(new RepositorySummaryDto(
@@ -442,7 +462,8 @@ public class GitService {
                         0,
                         false,
                         meta.getUpdatedAt(),
-                        meta.getRemoteUrl()
+                        meta.getRemoteUrl(),
+                        meta.getOwnerUsername()
                 ));
             }
         }
@@ -484,7 +505,8 @@ public class GitService {
                     primaryRemote,
                     meta.getCreatedAt(),
                     meta.getUpdatedAt(),
-                    remotes
+                    remotes,
+                    meta.getOwnerUsername()
             );
         } catch (Exception e) {
             return new RepositoryDetailsDto(
@@ -499,7 +521,8 @@ public class GitService {
                     meta.getRemoteUrl(),
                     meta.getCreatedAt(),
                     meta.getUpdatedAt(),
-                    Collections.emptyList()
+                    Collections.emptyList(),
+                    meta.getOwnerUsername()
             );
         }
     }

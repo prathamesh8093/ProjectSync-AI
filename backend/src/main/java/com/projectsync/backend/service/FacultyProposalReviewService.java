@@ -31,13 +31,16 @@ public class FacultyProposalReviewService {
     private final ProjectProposalRepository proposalRepository;
     private final ProposalReviewRepository proposalReviewRepository;
     private final UserRepository userRepository;
+    private final ProjectCodeGenerator projectCodeGenerator;
 
     public FacultyProposalReviewService(ProjectProposalRepository proposalRepository,
                                          ProposalReviewRepository proposalReviewRepository,
-                                         UserRepository userRepository) {
+                                         UserRepository userRepository,
+                                         ProjectCodeGenerator projectCodeGenerator) {
         this.proposalRepository = proposalRepository;
         this.proposalReviewRepository = proposalReviewRepository;
         this.userRepository = userRepository;
+        this.projectCodeGenerator = projectCodeGenerator;
     }
 
     @Transactional(readOnly = true)
@@ -88,6 +91,9 @@ public class FacultyProposalReviewService {
         proposalReviewRepository.save(review);
 
         proposal.setStatus(decision);
+        if (DECISION_APPROVED.equals(decision) && (proposal.getProjectCode() == null || proposal.getProjectCode().isBlank())) {
+            proposal.setProjectCode(projectCodeGenerator.generateNextProjectCode());
+        }
         proposal.setUpdatedAt(now);
         proposal = proposalRepository.save(proposal);
 
@@ -116,6 +122,12 @@ public class FacultyProposalReviewService {
         response.setObjectives(proposal.getObjectives());
         response.setTechnologyStack(proposal.getTechnologyStack());
         response.setStatus(proposal.getStatus());
+
+        if (proposal.getProjectCode() == null || proposal.getProjectCode().isBlank()) {
+            proposal.setProjectCode(projectCodeGenerator.generateNextProjectCode());
+            proposal = proposalRepository.save(proposal);
+        }
+        response.setProjectCode(proposal.getProjectCode());
 
         if (proposal.getSubmittedBy() != null) {
             response.setSubmittedById(proposal.getSubmittedBy().getId());

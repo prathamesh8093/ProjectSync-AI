@@ -10,6 +10,7 @@ public class FacultyProjectMonitoringResponse {
     private UUID projectId;
     private UUID proposalId;
     private UUID teamId;
+    private String projectCode;
 
     private String projectName;
     private String projectStatus;
@@ -78,6 +79,14 @@ public class FacultyProjectMonitoringResponse {
 
     public void setTeamId(UUID teamId) {
         this.teamId = teamId;
+    }
+
+    public String getProjectCode() {
+        return projectCode;
+    }
+
+    public void setProjectCode(String projectCode) {
+        this.projectCode = projectCode;
     }
 
     public String getProjectName() {

@@ -31,15 +31,18 @@ public class ProjectProposalService {
     private final ProposalReviewRepository proposalReviewRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
+    private final ProjectCodeGenerator projectCodeGenerator;
 
     public ProjectProposalService(ProjectProposalRepository proposalRepository,
                                    ProposalReviewRepository proposalReviewRepository,
                                    TeamMemberRepository teamMemberRepository,
-                                   UserRepository userRepository) {
+                                   UserRepository userRepository,
+                                   ProjectCodeGenerator projectCodeGenerator) {
         this.proposalRepository = proposalRepository;
         this.proposalReviewRepository = proposalReviewRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.userRepository = userRepository;
+        this.projectCodeGenerator = projectCodeGenerator;
     }
 
     @Transactional
@@ -60,6 +63,7 @@ public class ProjectProposalService {
         proposal.setObjectives(request.getObjectives());
         proposal.setTechnologyStack(request.getTechnologyStack());
         proposal.setStatus(STATUS_DRAFT);
+        proposal.setProjectCode(projectCodeGenerator.generateNextProjectCode());
         proposal.setSubmittedBy(null);
         proposal.setSubmittedAt(null);
         proposal.setUpdatedAt(now);
@@ -185,6 +189,13 @@ public class ProjectProposalService {
         response.setObjectives(proposal.getObjectives());
         response.setTechnologyStack(proposal.getTechnologyStack());
         response.setStatus(proposal.getStatus());
+
+        if (proposal.getProjectCode() == null || proposal.getProjectCode().isBlank()) {
+            proposal.setProjectCode(projectCodeGenerator.generateNextProjectCode());
+            proposal = proposalRepository.save(proposal);
+        }
+        response.setProjectCode(proposal.getProjectCode());
+
         response.setSubmittedBy(proposal.getSubmittedBy() != null ? proposal.getSubmittedBy().getId() : null);
         response.setSubmittedAt(proposal.getSubmittedAt());
         response.setUpdatedAt(proposal.getUpdatedAt());

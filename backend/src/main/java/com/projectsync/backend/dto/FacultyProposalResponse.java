@@ -13,6 +13,7 @@ public class FacultyProposalResponse {
     private String objectives;
     private String technologyStack;
     private String status;
+    private String projectCode;
     private UUID submittedById;
     private String submittedByName;
     private OffsetDateTime submittedAt;
@@ -46,6 +47,9 @@ public class FacultyProposalResponse {
 
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
+
+    public String getProjectCode() { return projectCode; }
+    public void setProjectCode(String projectCode) { this.projectCode = projectCode; }
 
     public UUID getSubmittedById() { return submittedById; }
     public void setSubmittedById(UUID submittedById) { this.submittedById = submittedById; }

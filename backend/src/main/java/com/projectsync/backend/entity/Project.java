@@ -34,6 +34,9 @@ public class Project {
     @Column(name = "status", nullable = false, length = 30)
     private String status;
 
+    @Column(name = "project_code", length = 32, unique = true)
+    private String projectCode;
+
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
 
@@ -88,6 +91,14 @@ public class Project {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getProjectCode() {
+        return projectCode;
+    }
+
+    public void setProjectCode(String projectCode) {
+        this.projectCode = projectCode;
     }
 
     public OffsetDateTime getCreatedAt() {

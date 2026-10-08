@@ -29,6 +29,16 @@ public class VcsController {
         return "local-developer";
     }
 
+    private boolean isFacultyOrAdmin(Authentication auth) {
+        if (auth == null || !auth.isAuthenticated() || "anonymousUser".equals(auth.getPrincipal())) {
+            return false;
+        }
+        return auth.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equalsIgnoreCase("ROLE_FACULTY") ||
+                a.getAuthority().equalsIgnoreCase("ROLE_ADMIN")
+        );
+    }
+
     // --------------------------------------------------------------------------
     // HEALTH & DIAGNOSTICS
     // --------------------------------------------------------------------------
@@ -47,8 +57,10 @@ public class VcsController {
     // --------------------------------------------------------------------------
 
     @GetMapping("/repositories")
-    public ResponseEntity<List<RepositorySummaryDto>> listRepositories() {
-        return ResponseEntity.ok(gitService.listRepositories());
+    public ResponseEntity<List<RepositorySummaryDto>> listRepositories(Authentication auth) {
+        String username = resolveUsername(auth);
+        boolean isFacultyOrAdmin = isFacultyOrAdmin(auth);
+        return ResponseEntity.ok(gitService.listRepositories(username, isFacultyOrAdmin));
     }
 
     @PostMapping("/repositories")

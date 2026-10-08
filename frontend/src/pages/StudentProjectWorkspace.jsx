@@ -27,6 +27,9 @@ import {
   getTeamMembers,
 } from '../services/teamService.js'
 import {
+  getMyProposal,
+} from '../services/projectProposalService.js'
+import {
   getTaskHistory,
 } from '../services/taskHistoryService.js'
 import {
@@ -234,6 +237,20 @@ function StudentProjectWorkspace() {
           setTasks([])
           setDocuments([])
           setProjectProgress(null)
+
+          try {
+            const proposalResponse = await getMyProposal()
+            if (proposalResponse?.data) {
+              const prop = proposalResponse.data
+              setProjectForm((prev) => ({
+                ...prev,
+                proposalId: prop.projectCode || prop.id || '',
+                name: prev.name || prop.title || '',
+                description: prev.description || prop.description || '',
+              }))
+            }
+          } catch (ignored) {
+          }
         } else {
           throw projectError
         }
@@ -1530,7 +1547,7 @@ function StudentProjectWorkspace() {
               >
                 <div className="workspace-form-group">
                   <label htmlFor="proposalId">
-                    Approved Proposal ID
+                    Approved Project ID
                   </label>
 
                   <input
@@ -1539,9 +1556,12 @@ function StudentProjectWorkspace() {
                     type="text"
                     value={projectForm.proposalId}
                     onChange={handleProjectFormChange}
-                    placeholder="Enter approved proposal ID"
+                    placeholder="e.g. PRJ-2026-001"
                     required
                   />
+                  <small style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.3rem', display: 'block' }}>
+                    Enter your clean project ID from the Proposal Status page (e.g. PRJ-2026-001).
+                  </small>
                 </div>
 
                 <div className="workspace-form-group">
@@ -1621,18 +1641,18 @@ function StudentProjectWorkspace() {
                     Project ID
                   </span>
 
-                  <span className="workspace-value">
-                    {project.id}
+                  <span className="workspace-value" style={{ fontFamily: 'monospace', fontWeight: 700, color: 'var(--primary)' }}>
+                    {project.projectCode || project.id}
                   </span>
                 </div>
 
                 <div>
                   <span className="workspace-label">
-                    Proposal ID
+                    Proposal Code / ID
                   </span>
 
-                  <span className="workspace-value">
-                    {project.proposalId}
+                  <span className="workspace-value" style={{ fontFamily: 'monospace' }}>
+                    {project.projectCode || project.proposalId}
                   </span>
                 </div>
 

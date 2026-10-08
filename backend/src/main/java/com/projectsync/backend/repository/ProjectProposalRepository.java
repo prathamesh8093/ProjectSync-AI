@@ -12,4 +12,7 @@ public interface ProjectProposalRepository extends JpaRepository<ProjectProposal
     Optional<ProjectProposal> findByTeam(Team team);
     boolean existsByTeam(Team team);
     List<ProjectProposal> findByStatus(String status);
+    Optional<ProjectProposal> findByProjectCode(String projectCode);
+    Optional<ProjectProposal> findByProjectCodeIgnoreCase(String projectCode);
+    boolean existsByProjectCode(String projectCode);
 }

@@ -22,6 +22,10 @@ import {
   Terminal,
   ChevronDown,
   ChevronUp,
+  LayoutDashboard,
+  UserRound,
+  Users,
+  ListChecks,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
@@ -32,9 +36,20 @@ import '../styles/vcs.css'
 
 // Navigation items matching Student Dashboard navigation
 const studentNavItems = [
-  { label: 'Dashboard', icon: Layers, path: '/student/dashboard' },
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/student/dashboard' },
+  { label: 'My Profile', icon: UserRound, path: '/student/profile' },
+  { label: 'My Team', icon: Users, path: '/student/team' },
+  { label: 'Project Proposal', icon: FileText, path: '/student/proposal' },
+  { label: 'Tasks / Projects', icon: ListChecks, path: '/student/projects' },
   { label: 'Version Control (VCS)', icon: GitBranch, path: '/student/vcs' },
-  { label: 'Tasks / Projects', icon: FileText, path: '/student/projects' },
+]
+
+const facultyNavItems = [
+  { label: 'Dashboard', icon: LayoutDashboard, path: '/faculty/dashboard' },
+  { label: 'Faculty Profile', icon: UserRound, path: '/faculty/profile' },
+  { label: 'Project Proposals', icon: FileText, path: '/faculty/proposals' },
+  { label: 'Project Monitoring', icon: ListChecks, path: '/faculty/projects' },
+  { label: 'Version Control (VCS)', icon: GitBranch, path: '/student/vcs' },
 ]
 
 export default function VcsDashboard() {
@@ -498,7 +513,7 @@ export default function VcsDashboard() {
   const unstagedCount = (status?.unstaged?.length || 0) + (status?.untracked?.length || 0)
 
   return (
-    <DashboardLayout navItems={studentNavItems}>
+    <DashboardLayout navItems={user?.role === 'FACULTY' ? facultyNavItems : studentNavItems}>
       <div className="vcs-container">
         {/* Toast Feedback Alert */}
         {feedback && (
@@ -1206,49 +1221,77 @@ export default function VcsDashboard() {
               </div>
             </div>
             <div className="vcs-panel-body">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
-                {repositories.map((r) => (
-                  <div
-                    key={r.id}
-                    className={`vcs-branch-card ${r.id === activeRepoId ? 'is-active' : ''}`}
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => {
-                      setActiveRepoId(r.id)
-                      setActiveTab('changes')
-                    }}
-                  >
-                    <div className="vcs-branch-header">
-                      <div className="vcs-branch-name">
-                        <FolderGit2 size={18} color="var(--primary)" />
-                        <span>{r.name}</span>
+              {repositories.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
+                  <FolderGit2 size={40} style={{ opacity: 0.35, margin: '0 auto 0.75rem' }} />
+                  <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                    {user?.role === 'STUDENT' ? 'No Repositories Found for Your Account' : 'No Repositories Registered'}
+                  </h3>
+                  <p style={{ maxWidth: '420px', margin: '0 auto 1.5rem', fontSize: '0.88rem' }}>
+                    {user?.role === 'STUDENT'
+                      ? 'You can only view repositories belonging to your account. Click Initialize Repo, Clone Repo, or Open Local above to create your own repository.'
+                      : 'No repositories exist in the system yet. Click Initialize Repo or Clone Repo above to get started.'}
+                  </p>
+                  <button className="vcs-btn vcs-btn-primary" onClick={() => setCreateRepoModal(true)} style={{ margin: '0 auto' }}>
+                    <Plus size={15} />
+                    <span>Initialize New Repository</span>
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+                  {repositories.map((r) => (
+                    <div
+                      key={r.id}
+                      className={`vcs-branch-card ${r.id === activeRepoId ? 'is-active' : ''}`}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => {
+                        setActiveRepoId(r.id)
+                        setActiveTab('changes')
+                      }}
+                    >
+                      <div className="vcs-branch-header">
+                        <div className="vcs-branch-name">
+                          <FolderGit2 size={18} color="var(--primary)" />
+                          <span>{r.name}</span>
+                        </div>
+                        <span className="vcs-sha-badge">{r.currentBranch}</span>
                       </div>
-                      <span className="vcs-sha-badge">{r.currentBranch}</span>
+                      <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        {r.description || 'No description provided.'}
+                      </p>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', margin: '0.35rem 0', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.72rem', background: '#f1f5f9', color: '#475569', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 500 }}>
+                          Owner: {r.ownerUsername || 'You'}
+                        </span>
+                        {r.remoteUrl && (
+                          <span style={{ fontSize: '0.72rem', background: '#e0f2fe', color: '#0369a1', padding: '0.15rem 0.45rem', borderRadius: '4px', fontWeight: 500 }}>
+                            Linked Remote
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                        {r.diskPath}
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
+                          {r.commitCount} {r.commitCount === 1 ? 'commit' : 'commits'}
+                        </span>
+                        <button
+                          className="vcs-btn-sm"
+                          style={{ color: 'var(--danger)' }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteRepo(r.id, false)
+                          }}
+                        >
+                          <Trash2 size={12} />
+                          <span>Unregister</span>
+                        </button>
+                      </div>
                     </div>
-                    <p style={{ margin: '0.25rem 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      {r.description || 'No description provided.'}
-                    </p>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                      {r.diskPath}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>
-                        {r.commitCount} {r.commitCount === 1 ? 'commit' : 'commits'}
-                      </span>
-                      <button
-                        className="vcs-btn-sm"
-                        style={{ color: 'var(--danger)' }}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          handleDeleteRepo(r.id, false)
-                        }}
-                      >
-                        <Trash2 size={12} />
-                        <span>Unregister</span>
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
