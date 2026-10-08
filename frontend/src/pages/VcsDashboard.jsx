@@ -34,6 +34,7 @@ import '../styles/vcs.css'
 const studentNavItems = [
   { label: 'Dashboard', icon: Layers, path: '/student/dashboard' },
   { label: 'Version Control (VCS)', icon: GitBranch, path: '/student/vcs' },
+  { label: 'Tasks / Projects', icon: FileText, path: '/student/projects' },
 ]
 
 export default function VcsDashboard() {
