@@ -18,9 +18,15 @@ import {
   ShieldCheck,
   Send,
   Layers,
+  Download,
+  Terminal,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
 import vcsService from '../services/vcsService.js'
+import { useAuth } from '../context/AuthContext.jsx'
 import '../styles/dashboard.css'
 import '../styles/vcs.css'
 
@@ -28,10 +34,10 @@ import '../styles/vcs.css'
 const studentNavItems = [
   { label: 'Dashboard', icon: Layers, path: '/student/dashboard' },
   { label: 'Version Control (VCS)', icon: GitBranch, path: '/student/vcs' },
-  { label: 'Tasks / Projects', icon: FileText, path: '/student/projects' },
 ]
 
 export default function VcsDashboard() {
+  const { isAuthenticated, user, isDevMode } = useAuth()
   const [repositories, setRepositories] = useState([])
   const [activeRepoId, setActiveRepoId] = useState('')
   const [activeRepo, setActiveRepo] = useState(null)
@@ -65,6 +71,22 @@ export default function VcsDashboard() {
   // Register existing repo modal
   const [registerRepoModal, setRegisterRepoModal] = useState(false)
   const [regRepoData, setRegRepoData] = useState({ name: '', path: '', description: '' })
+
+  // Clone repo modal
+  const [cloneRepoModal, setCloneRepoModal] = useState(false)
+  const [cloneData, setCloneData] = useState({
+    remoteUrl: '',
+    name: '',
+    branch: '',
+    description: '',
+    username: '',
+    personalAccessToken: '',
+    isNameAutoDerived: true,
+  })
+  const [cloneLoading, setCloneLoading] = useState(false)
+  const [cloneResult, setCloneResult] = useState(null)
+  const [cloneError, setCloneError] = useState(null)
+  const [showCloneAuth, setShowCloneAuth] = useState(false)
 
   // Remote & Sync modal
   const [remoteModal, setRemoteModal] = useState(false)
@@ -305,6 +327,10 @@ export default function VcsDashboard() {
   // Create repository
   const handleCreateRepo = async (e) => {
     e.preventDefault()
+    if (!isAuthenticated && !isDevMode) {
+      showToast('error', 'Authentication required. Please log in before creating a repository.')
+      return
+    }
     try {
       const created = await vcsService.createRepository(newRepoData)
       setCreateRepoModal(false)
@@ -313,13 +339,21 @@ export default function VcsDashboard() {
       setActiveRepoId(created.id)
       showToast('success', `Repository '${created.name}' initialized successfully`)
     } catch (err) {
-      showToast('error', err.response?.data?.message || err.message)
+      if (err.response?.status === 401) {
+        showToast('error', 'Authentication failed or session expired. Please log in through the Login page.')
+      } else {
+        showToast('error', err.response?.data?.message || err.message)
+      }
     }
   }
 
   // Register existing local repository
   const handleRegisterRepo = async (e) => {
     e.preventDefault()
+    if (!isAuthenticated && !isDevMode) {
+      showToast('error', 'Authentication required. Please log in before registering a repository.')
+      return
+    }
     try {
       const registered = await vcsService.registerRepository(regRepoData)
       setRegisterRepoModal(false)
@@ -328,7 +362,74 @@ export default function VcsDashboard() {
       setActiveRepoId(registered.id)
       showToast('success', `Repository '${registered.name}' registered successfully`)
     } catch (err) {
-      showToast('error', err.response?.data?.message || err.message)
+      if (err.response?.status === 401) {
+        showToast('error', 'Authentication failed or session expired. Please log in through the Login page.')
+      } else {
+        showToast('error', err.response?.data?.message || err.message)
+      }
+    }
+  }
+
+  // Clone URL input change helper
+  const handleCloneUrlChange = (url) => {
+    let suggestedName = cloneData.name
+    const cleanUrl = url.trim().replace(/\/+$/, '')
+    const withoutGit = cleanUrl.endsWith('.git') ? cleanUrl.slice(0, -4) : cleanUrl
+    const lastSlash = Math.max(withoutGit.lastIndexOf('/'), withoutGit.lastIndexOf('\\'))
+    const extracted = lastSlash >= 0 ? withoutGit.slice(lastSlash + 1) : ''
+
+    if (!cloneData.name || cloneData.isNameAutoDerived) {
+      suggestedName = extracted
+    }
+
+    setCloneData({
+      ...cloneData,
+      remoteUrl: url,
+      name: suggestedName,
+      isNameAutoDerived: true,
+    })
+  }
+
+  // Clone remote repository
+  const handleCloneRepo = async (e) => {
+    e.preventDefault()
+    if (!cloneData.remoteUrl.trim()) {
+      setCloneError('Remote repository URL is required.')
+      return
+    }
+
+    if (!isAuthenticated && !isDevMode) {
+      showToast('error', 'Authentication required. Please log in before cloning a repository.')
+      return
+    }
+
+    try {
+      setCloneLoading(true)
+      setCloneError(null)
+      setCloneResult(null)
+
+      const payload = {
+        remoteUrl: cloneData.remoteUrl.trim(),
+        name: cloneData.name.trim() || undefined,
+        branch: cloneData.branch.trim() || undefined,
+        description: cloneData.description.trim() || undefined,
+        username: cloneData.username.trim() || undefined,
+        personalAccessToken: cloneData.personalAccessToken.trim() || undefined,
+      }
+
+      const res = await vcsService.cloneRepository(payload)
+      setCloneResult(res)
+      showToast('success', `Repository '${res.repository.name}' cloned successfully!`)
+
+      const list = await vcsService.listRepositories()
+      setRepositories(list)
+      setActiveRepoId(res.repository.id)
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || 'Clone failed'
+      setCloneError(msg)
+      showToast('error', 'Git clone failed: ' + msg)
+    } finally {
+      setCloneLoading(false)
     }
   }
 
@@ -429,6 +530,39 @@ export default function VcsDashboard() {
           </div>
         )}
 
+        {/* Unauthenticated Dev Access Notice */}
+        {!isAuthenticated && (
+          <div
+            className="vcs-auth-warning"
+            style={{
+              background: '#fef3c7',
+              border: '1px solid #f59e0b',
+              color: '#92400e',
+              padding: '0.75rem 1rem',
+              borderRadius: '6px',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '1rem',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <AlertCircle size={18} />
+              <span style={{ fontSize: '0.88rem' }}>
+                <strong>Local Dev Access (Unauthenticated):</strong> You can inspect the VCS dashboard, but initializing or modifying repositories requires logging in with an authenticated user.
+              </span>
+            </div>
+            <Link
+              to="/login"
+              className="vcs-btn-sm vcs-btn-primary-sm"
+              style={{ textDecoration: 'none', padding: '0.35rem 0.85rem', whiteSpace: 'nowrap' }}
+            >
+              Log In Now
+            </Link>
+          </div>
+        )}
+
         {/* Topbar: Repository Selector & Quick Actions */}
         <div className="vcs-topbar">
           <div className="vcs-repo-selector-group">
@@ -525,9 +659,41 @@ export default function VcsDashboard() {
               </>
             )}
 
+            {isAuthenticated && user && (
+              <span
+                style={{
+                  fontSize: '0.82rem',
+                  color: '#475569',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  background: '#f1f5f9',
+                  padding: '0.25rem 0.6rem',
+                  borderRadius: '4px',
+                  border: '1px solid #e2e8f0',
+                }}
+                title={`Authenticated as ${user.email} (${user.role})`}
+              >
+                <ShieldCheck size={14} color="#10b981" />
+                <span>{user.email || user.fullName}</span>
+              </span>
+            )}
+
             <button className="vcs-btn-sm vcs-btn-primary-sm" onClick={() => setCreateRepoModal(true)}>
               <Plus size={14} />
               <span>New Repo</span>
+            </button>
+
+            <button
+              className="vcs-btn-sm"
+              onClick={() => {
+                setCloneRepoModal(true)
+                setCloneResult(null)
+                setCloneError(null)
+              }}
+            >
+              <Download size={14} />
+              <span>Clone Repo</span>
             </button>
 
             <button className="vcs-btn-sm" onClick={() => setRegisterRepoModal(true)}>
@@ -593,10 +759,23 @@ export default function VcsDashboard() {
               <div className="vcs-empty-state">
                 <FolderGit2 size={48} color="var(--text-muted)" />
                 <h3>No Repository Selected</h3>
-                <p>Initialize a new Git repository or register an existing one to begin version control.</p>
-                <button className="vcs-btn-sm vcs-btn-primary-sm" onClick={() => setCreateRepoModal(true)}>
-                  Create New Repository
-                </button>
+                <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button className="vcs-btn-sm vcs-btn-primary-sm" onClick={() => setCreateRepoModal(true)}>
+                    <Plus size={14} />
+                    <span>Create New Repository</span>
+                  </button>
+                  <button
+                    className="vcs-btn-sm"
+                    onClick={() => {
+                      setCloneRepoModal(true)
+                      setCloneResult(null)
+                      setCloneError(null)
+                    }}
+                  >
+                    <Download size={14} />
+                    <span>Clone Remote Repository</span>
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="vcs-staging-grid">
@@ -1003,10 +1182,21 @@ export default function VcsDashboard() {
                 <FolderGit2 size={18} />
                 <span>Managed Local Repositories ({repositories.length})</span>
               </h3>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <button className="vcs-btn-sm vcs-btn-primary-sm" onClick={() => setCreateRepoModal(true)}>
                   <Plus size={14} />
                   <span>Create Repo</span>
+                </button>
+                <button
+                  className="vcs-btn-sm"
+                  onClick={() => {
+                    setCloneRepoModal(true)
+                    setCloneResult(null)
+                    setCloneError(null)
+                  }}
+                >
+                  <Download size={14} />
+                  <span>Clone Repo</span>
                 </button>
                 <button className="vcs-btn-sm" onClick={() => setRegisterRepoModal(true)}>
                   <FolderOpen size={14} />
@@ -1299,6 +1489,250 @@ export default function VcsDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        )}
+
+        {/* MODAL: CLONE REPOSITORY */}
+        {cloneRepoModal && (
+          <div
+            className="vcs-modal-backdrop"
+            onClick={() => {
+              if (!cloneLoading) setCloneRepoModal(false)
+            }}
+          >
+            <div className="vcs-modal" style={{ maxWidth: '650px' }} onClick={(e) => e.stopPropagation()}>
+              <div className="vcs-modal-header">
+                <h3 className="vcs-modal-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Download size={18} color="var(--primary)" />
+                  <span>Clone Remote Git Repository</span>
+                </h3>
+                <button
+                  type="button"
+                  className="vcs-btn-sm"
+                  disabled={cloneLoading}
+                  onClick={() => setCloneRepoModal(false)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* SUCCESS VIEW */}
+              {cloneResult ? (
+                <div className="vcs-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div className="vcs-alert vcs-alert-success">
+                    <CheckCircle2 size={20} style={{ flexShrink: 0 }} />
+                    <div>
+                      <strong>Repository cloned successfully!</strong>
+                      <div style={{ fontSize: '0.82rem', marginTop: '0.2rem' }}>
+                        The remote repository was cloned and registered in local version control.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="vcs-clone-detail-card">
+                    <div className="vcs-clone-detail-item">
+                      <span className="vcs-clone-detail-label">Repository Name</span>
+                      <span className="vcs-clone-detail-val">{cloneResult.repository.name}</span>
+                    </div>
+                    <div className="vcs-clone-detail-item">
+                      <span className="vcs-clone-detail-label">Branch</span>
+                      <span className="vcs-clone-detail-val">{cloneResult.repository.defaultBranch}</span>
+                    </div>
+                    <div className="vcs-clone-detail-item">
+                      <span className="vcs-clone-detail-label">Remote URL</span>
+                      <span className="vcs-clone-detail-val" style={{ fontSize: '0.8rem', wordBreak: 'break-all' }}>
+                        {cloneResult.repository.remoteUrl}
+                      </span>
+                    </div>
+                    <div className="vcs-clone-detail-item">
+                      <span className="vcs-clone-detail-label">Disk Path</span>
+                      <span className="vcs-clone-detail-val" style={{ fontSize: '0.78rem', wordBreak: 'break-all' }}>
+                        {cloneResult.repository.diskPath}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="vcs-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                      <Terminal size={14} />
+                      <span>Clone Execution Output</span>
+                    </label>
+                    <div className="vcs-terminal-box">
+                      {cloneResult.cloneOutput || 'Clone executed with status: OK'}
+                    </div>
+                  </div>
+
+                  <div className="vcs-modal-footer" style={{ marginTop: '0.5rem', padding: 0 }}>
+                    <button
+                      type="button"
+                      className="vcs-btn-sm"
+                      onClick={() => setCloneRepoModal(false)}
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      className="vcs-btn-sm vcs-btn-primary-sm"
+                      onClick={() => {
+                        setCloneRepoModal(false)
+                        setActiveRepoId(cloneResult.repository.id)
+                        setActiveTab('changes')
+                      }}
+                    >
+                      <FolderGit2 size={14} />
+                      <span>Open in Dashboard</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* FORM VIEW */
+                <form onSubmit={handleCloneRepo}>
+                  <div className="vcs-modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                    <div className="vcs-form-group">
+                      <label className="vcs-label">Remote Repository URL *</label>
+                      <input
+                        className="vcs-input"
+                        placeholder="e.g. https://github.com/octocat/Hello-World.git"
+                        value={cloneData.remoteUrl}
+                        onChange={(e) => handleCloneUrlChange(e.target.value)}
+                        disabled={cloneLoading}
+                        required
+                      />
+                      <span className="vcs-help-text">
+                        HTTPS remote clone URL (e.g. GitHub, GitLab, Bitbucket).
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                      <div className="vcs-form-group">
+                        <label className="vcs-label">Local Repository Name</label>
+                        <input
+                          className="vcs-input"
+                          placeholder="Auto-derived if empty"
+                          value={cloneData.name}
+                          onChange={(e) => setCloneData({ ...cloneData, name: e.target.value, isNameAutoDerived: false })}
+                          disabled={cloneLoading}
+                        />
+                      </div>
+
+                      <div className="vcs-form-group">
+                        <label className="vcs-label">Branch (optional)</label>
+                        <input
+                          className="vcs-input"
+                          placeholder="e.g. main (default HEAD)"
+                          value={cloneData.branch}
+                          onChange={(e) => setCloneData({ ...cloneData, branch: e.target.value })}
+                          disabled={cloneLoading}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="vcs-form-group">
+                      <label className="vcs-label">Description (optional)</label>
+                      <input
+                        className="vcs-input"
+                        placeholder="Brief notes about this project repository"
+                        value={cloneData.description}
+                        onChange={(e) => setCloneData({ ...cloneData, description: e.target.value })}
+                        disabled={cloneLoading}
+                      />
+                    </div>
+
+                    {/* Collapsible Auth Section */}
+                    <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', padding: '0.65rem 0.85rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowCloneAuth(!showCloneAuth)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          width: '100%',
+                          fontSize: '0.86rem',
+                          fontWeight: 600,
+                          color: 'var(--text-primary)',
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <ShieldCheck size={16} color="var(--primary)" />
+                          <span>Private Repository Credentials (Optional)</span>
+                        </span>
+                        {showCloneAuth ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                      </button>
+
+                      {showCloneAuth && (
+                        <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                          <div className="vcs-form-group">
+                            <label className="vcs-label">Username</label>
+                            <input
+                              className="vcs-input"
+                              placeholder="e.g. your-github-username"
+                              value={cloneData.username}
+                              onChange={(e) => setCloneData({ ...cloneData, username: e.target.value })}
+                              disabled={cloneLoading}
+                            />
+                          </div>
+                          <div className="vcs-form-group">
+                            <label className="vcs-label">Personal Access Token (PAT)</label>
+                            <input
+                              type="password"
+                              className="vcs-input"
+                              placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                              value={cloneData.personalAccessToken}
+                              onChange={(e) => setCloneData({ ...cloneData, personalAccessToken: e.target.value })}
+                              disabled={cloneLoading}
+                            />
+                            <span className="vcs-help-text">
+                              Used strictly in-memory during this clone operation; never saved or logged.
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ERROR ALERT */}
+                    {cloneError && (
+                      <div className="vcs-alert vcs-alert-error" style={{ whiteSpace: 'pre-wrap' }}>
+                        <AlertCircle size={18} style={{ flexShrink: 0 }} />
+                        <span>{cloneError}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="vcs-modal-footer">
+                    <button
+                      type="button"
+                      className="vcs-btn-sm"
+                      onClick={() => setCloneRepoModal(false)}
+                      disabled={cloneLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="vcs-btn-sm vcs-btn-primary-sm"
+                      disabled={cloneLoading}
+                    >
+                      {cloneLoading ? (
+                        <>
+                          <RefreshCw size={14} className="vcs-spin" />
+                          <span>Cloning Repository...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download size={14} />
+                          <span>Clone Repository</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         )}
 

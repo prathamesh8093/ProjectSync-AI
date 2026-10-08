@@ -3,7 +3,10 @@ package com.projectsync.backend;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(properties = "spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=YEAR;INIT=CREATE DOMAIN IF NOT EXISTS \"TEXT\" AS CHARACTER LARGE OBJECT")
+@SpringBootTest(properties = {
+		"spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=YEAR;INIT=CREATE DOMAIN IF NOT EXISTS \"TEXT\" AS CHARACTER LARGE OBJECT",
+		"spring.datasource.driver-class-name=org.h2.Driver"
+})
 class BackendApplicationTests {
 
 	@Test

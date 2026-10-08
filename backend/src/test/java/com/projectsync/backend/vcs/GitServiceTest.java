@@ -26,8 +26,19 @@ public class GitServiceTest {
 
     @BeforeEach
     void setUp() {
+        org.eclipse.jgit.storage.file.WindowCacheConfig config = new org.eclipse.jgit.storage.file.WindowCacheConfig();
+        config.setPackedGitMMAP(false);
+        config.install();
+
         metadataStore = new LocalRepositoryMetadataStore(tempStorageDir.toString());
         gitService = new GitService(tempStorageDir.toString(), metadataStore);
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void tearDown() {
+        org.eclipse.jgit.storage.file.WindowCacheConfig config = new org.eclipse.jgit.storage.file.WindowCacheConfig();
+        config.setPackedGitMMAP(false);
+        config.install();
     }
 
     @Test
@@ -197,5 +208,31 @@ public class GitServiceTest {
         SyncRequest pullReq = new SyncRequest("origin", "main", null, null, false);
         SyncResultDto pullResult = gitService.pullRemote(repo.getId(), pullReq);
         assertTrue(pullResult.isSuccess(), "Pull should succeed: " + pullResult.getMessage());
+    }
+
+    @Test
+    void testCloneRepository() throws Exception {
+        // 1. Create a source repo with initial commit
+        CreateRepoRequest srcReq = new CreateRepoRequest("source-repo", "Source for clone", "main", true);
+        RepositoryDetailsDto srcRepo = gitService.createRepository(srcReq, "author");
+
+        // 2. Clone from local source repo URI
+        CloneRepoRequest cloneReq = new CloneRepoRequest();
+        cloneReq.setRemoteUrl(Path.of(srcRepo.getDiskPath()).toUri().toString());
+        cloneReq.setName("cloned-repo");
+        cloneReq.setDescription("A successfully cloned repository");
+
+        CloneResultDto cloneResult = gitService.cloneRepository(cloneReq, "clone-user");
+
+        assertNotNull(cloneResult);
+        assertNotNull(cloneResult.getRepository());
+        assertEquals("cloned-repo", cloneResult.getRepository().getName());
+        assertEquals(1, cloneResult.getRepository().getCommitCount());
+        assertTrue(cloneResult.getCloneOutput().contains("Clone completed successfully"));
+
+        // Verify disk files
+        Path clonedDir = Path.of(cloneResult.getRepository().getDiskPath());
+        assertTrue(Files.exists(clonedDir.resolve(".git")));
+        assertTrue(Files.exists(clonedDir.resolve("README.md")));
     }
 }

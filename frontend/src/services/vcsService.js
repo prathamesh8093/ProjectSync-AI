@@ -23,6 +23,11 @@ export const vcsService = {
     return res.data
   },
 
+  cloneRepository: async (data) => {
+    const res = await api.post('/vcs/repositories/clone', data)
+    return res.data
+  },
+
   getRepository: async (id) => {
     const res = await api.get(`/vcs/repositories/${id}`)
     return res.data

@@ -69,6 +69,15 @@ public class VcsController {
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }
 
+    @PostMapping("/repositories/clone")
+    public ResponseEntity<CloneResultDto> cloneRepository(
+            @Valid @RequestBody CloneRepoRequest req,
+            Authentication auth) {
+        String username = resolveUsername(auth);
+        CloneResultDto result = gitService.cloneRepository(req, username);
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
     @GetMapping("/repositories/{id}")
     public ResponseEntity<RepositoryDetailsDto> getRepositoryDetails(@PathVariable String id) {
         return ResponseEntity.ok(gitService.getRepositoryDetails(id));

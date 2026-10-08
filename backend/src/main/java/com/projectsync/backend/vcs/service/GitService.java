@@ -54,6 +54,10 @@ public class GitService {
 
     private void initStorageDirectory() {
         try {
+            org.eclipse.jgit.storage.file.WindowCacheConfig config = new org.eclipse.jgit.storage.file.WindowCacheConfig();
+            config.setPackedGitMMAP(false);
+            config.install();
+
             if (!Files.exists(baseStoragePath)) {
                 Files.createDirectories(baseStoragePath);
             }
@@ -98,7 +102,16 @@ public class GitService {
         }
         try {
             Repository repository = openGitRepository(dir);
-            return new Git(repository);
+            return new Git(repository) {
+                @Override
+                public void close() {
+                    try {
+                        repository.close();
+                    } finally {
+                        super.close();
+                    }
+                }
+            };
         } catch (IOException e) {
             throw new RuntimeException("Failed to open Git repository: " + e.getMessage(), e);
         }
@@ -218,6 +231,145 @@ public class GitService {
 
         } catch (IOException e) {
             throw new BadRequestException("Failed to open existing Git repository: " + e.getMessage());
+        }
+    }
+
+    public CloneResultDto cloneRepository(CloneRepoRequest req, String ownerUsername) {
+        String remoteUrl = req.getRemoteUrl() != null ? req.getRemoteUrl().trim() : "";
+        if (remoteUrl.isBlank()) {
+            throw new BadRequestException("Remote repository URL must not be blank");
+        }
+
+        // Determine repository name
+        String repoName = req.getName();
+        if (repoName == null || repoName.trim().isBlank()) {
+            String cleanUrl = remoteUrl.replaceAll("/+$", "");
+            if (cleanUrl.endsWith(".git")) {
+                cleanUrl = cleanUrl.substring(0, cleanUrl.length() - 4);
+            }
+            int lastSlash = Math.max(cleanUrl.lastIndexOf('/'), cleanUrl.lastIndexOf('\\'));
+            if (lastSlash >= 0 && lastSlash < cleanUrl.length() - 1) {
+                repoName = cleanUrl.substring(lastSlash + 1);
+            } else {
+                repoName = "repo-" + System.currentTimeMillis();
+            }
+        }
+        repoName = repoName.trim();
+
+        Path repoPath = resolveSafePath(repoName);
+
+        if (metadataStore.existsByName(repoName)) {
+            throw new ConflictException("A repository named '" + repoName + "' already exists");
+        }
+
+        if (Files.exists(repoPath)) {
+            throw new ConflictException("Target directory already exists at path: " + repoPath);
+        }
+
+        StringBuilder outputLog = new StringBuilder();
+        outputLog.append("Cloning into '").append(repoName).append("'...\n");
+        outputLog.append("Remote URL: ").append(remoteUrl).append("\n");
+
+        CloneCommand cloneCmd = Git.cloneRepository()
+                .setURI(remoteUrl)
+                .setDirectory(repoPath.toFile())
+                .setCloneAllBranches(true);
+
+        if (req.getBranch() != null && !req.getBranch().trim().isBlank()) {
+            cloneCmd.setBranch(req.getBranch().trim());
+            outputLog.append("Requested branch: ").append(req.getBranch().trim()).append("\n");
+        }
+
+        if (req.getUsername() != null && !req.getUsername().isBlank()
+                && req.getPersonalAccessToken() != null && !req.getPersonalAccessToken().isBlank()) {
+            cloneCmd.setCredentialsProvider(new UsernamePasswordCredentialsProvider(
+                    req.getUsername().trim(), req.getPersonalAccessToken().trim()));
+            outputLog.append("Credentials provided for user: ").append(req.getUsername().trim()).append("\n");
+        } else if (req.getPersonalAccessToken() != null && !req.getPersonalAccessToken().isBlank()) {
+            cloneCmd.setCredentialsProvider(new UsernamePasswordCredentialsProvider(
+                    req.getPersonalAccessToken().trim(), ""));
+            outputLog.append("Personal Access Token credentials provided.\n");
+        }
+
+        ProgressMonitor monitor = new ProgressMonitor() {
+            @Override
+            public void start(int totalTasks) {
+                outputLog.append("Tasks: ").append(totalTasks).append("\n");
+            }
+
+            @Override
+            public void beginTask(String title, int totalWork) {
+                outputLog.append("-> ").append(title);
+                if (totalWork > 0) {
+                    outputLog.append(" (").append(totalWork).append(" units)");
+                }
+                outputLog.append("\n");
+            }
+
+            @Override
+            public void update(int completed) {}
+
+            @Override
+            public void endTask() {}
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+
+            @Override
+            public void showDuration(boolean enabled) {}
+        };
+        cloneCmd.setProgressMonitor(monitor);
+
+        Git git = null;
+        try {
+            git = cloneCmd.call();
+            Repository repository = git.getRepository();
+            String currentBranch = repository.getBranch();
+            if (currentBranch == null) {
+                currentBranch = (req.getBranch() != null && !req.getBranch().isBlank()) ? req.getBranch().trim() : "main";
+            }
+
+            ObjectId headId = repository.resolve(Constants.HEAD);
+            String headSha = headId != null ? headId.getName() : "empty";
+            outputLog.append("Clone completed successfully.\n");
+            outputLog.append("Current branch: ").append(currentBranch).append("\n");
+            outputLog.append("HEAD: ").append(headSha).append("\n");
+
+            git.close();
+
+            RepositoryMetadata metadata = new RepositoryMetadata(
+                    null,
+                    repoName,
+                    (req.getDescription() != null && !req.getDescription().isBlank())
+                            ? req.getDescription().trim()
+                            : "Cloned from " + remoteUrl,
+                    repoPath.toString(),
+                    currentBranch,
+                    remoteUrl,
+                    ownerUsername,
+                    Instant.now(),
+                    Instant.now()
+            );
+
+            RepositoryMetadata saved = metadataStore.save(metadata);
+            RepositoryDetailsDto details = getRepositoryDetails(saved.getId());
+
+            return new CloneResultDto(details, "Repository cloned successfully", outputLog.toString());
+
+        } catch (Exception e) {
+            if (git != null) {
+                try {
+                    git.close();
+                } catch (Exception ignored) {}
+            }
+            // Cleanup partially cloned directory
+            deleteDirectoryRecursively(repoPath);
+
+            String msg = e.getMessage();
+            if (msg == null) msg = e.getClass().getSimpleName();
+            throw new BadRequestException("Git clone failed: " + msg);
         }
     }
 
@@ -375,13 +527,19 @@ public class GitService {
             Path target = Paths.get(meta.getDiskPath()).toAbsolutePath().normalize();
             // Critical security check: Only delete if directory is strictly inside baseStoragePath
             if (target.startsWith(baseStoragePath) && !target.equals(baseStoragePath)) {
-                try (var stream = Files.walk(target)) {
-                    stream.sorted(Comparator.reverseOrder())
-                            .map(Path::toFile)
-                            .forEach(File::delete);
-                } catch (IOException e) {
-                    System.err.println("Warning: Failed to clean up repository files on disk: " + e.getMessage());
-                }
+                deleteDirectoryRecursively(target);
+            }
+        }
+    }
+
+    private void deleteDirectoryRecursively(Path path) {
+        if (path != null && Files.exists(path)) {
+            try (var stream = Files.walk(path)) {
+                stream.sorted(Comparator.reverseOrder())
+                        .map(Path::toFile)
+                        .forEach(File::delete);
+            } catch (IOException e) {
+                System.err.println("Warning: Failed to recursively delete directory " + path + ": " + e.getMessage());
             }
         }
     }

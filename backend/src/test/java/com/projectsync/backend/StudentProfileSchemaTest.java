@@ -12,9 +12,10 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(properties = {
-    "spring.datasource.url=jdbc:h2:mem:schematestdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=YEAR;INIT=CREATE DOMAIN IF NOT EXISTS \"TEXT\" AS CHARACTER LARGE OBJECT",
-    "spring.jpa.hibernate.ddl-auto=create-drop",
-    "spring.jpa.show-sql=true"
+        "spring.datasource.url=jdbc:h2:mem:schematestdb;DB_CLOSE_DELAY=-1;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;NON_KEYWORDS=YEAR;INIT=CREATE DOMAIN IF NOT EXISTS \"TEXT\" AS CHARACTER LARGE OBJECT",
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.jpa.hibernate.ddl-auto=create-drop",
+        "spring.jpa.show-sql=true"
 })
 class StudentProfileSchemaTest {
 
