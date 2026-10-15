@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, UserRound, Users, FileText, ClipboardCheck } from 'lucide-react'
+import {
+  LayoutDashboard,
+  UserRound,
+  Users,
+  FileText,
+  ClipboardCheck,
+} from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
 import {
   getFacultyProposals,
@@ -16,7 +22,11 @@ const facultyNavItems = [
   { label: 'Faculty Profile', icon: UserRound, path: '/faculty/profile' },
   { label: 'Student Teams', icon: Users, path: null },
   { label: 'Project Proposals', icon: FileText, path: '/faculty/proposals' },
-  { label: 'Project Monitoring', icon: ClipboardCheck, path: null },
+  {
+    label: 'Project Monitoring',
+    icon: ClipboardCheck,
+    path: '/faculty/projects',
+  },
 ]
 
 const statusTone = {
@@ -28,6 +38,7 @@ const statusTone = {
 
 function formatDate(value) {
   if (!value) return '—'
+
   return new Date(value).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
@@ -39,6 +50,7 @@ function messageForError(err) {
   if (!err.response) {
     return 'Something went wrong. Please try again.'
   }
+
   switch (err.response.status) {
     case 401:
       return 'Your session has expired. Please log in again.'
@@ -76,17 +88,23 @@ function FacultyProjectProposals() {
     const loadProposals = async () => {
       try {
         const response = await getFacultyProposals()
+
         if (!isMounted) return
+
         setProposals(response.data)
       } catch (err) {
         if (!isMounted) return
+
         setListError(messageForError(err))
       } finally {
-        if (isMounted) setListLoading(false)
+        if (isMounted) {
+          setListLoading(false)
+        }
       }
     }
 
     loadProposals()
+
     return () => {
       isMounted = false
     }
@@ -100,6 +118,7 @@ function FacultyProjectProposals() {
     setReviewSuccess('')
     setComments('')
     setDetailLoading(true)
+
     try {
       const response = await getFacultyProposalById(proposalId)
       setDetail(response.data)
@@ -123,14 +142,24 @@ function FacultyProjectProposals() {
     setReviewError('')
     setReviewSuccess('')
     setReviewing(true)
+
     try {
       const response = await reviewFacultyProposal(detail.id, {
         decision,
         comments: comments.trim() || null,
       })
+
       setDetail(response.data)
-      setReviewSuccess(`Proposal ${decision === 'APPROVED' ? 'approved' : 'rejected'} successfully.`)
-      setProposals((prev) => prev.filter((p) => p.id !== response.data.id))
+
+      setReviewSuccess(
+        `Proposal ${
+          decision === 'APPROVED' ? 'approved' : 'rejected'
+        } successfully.`
+      )
+
+      setProposals((prev) =>
+        prev.filter((proposal) => proposal.id !== response.data.id)
+      )
     } catch (err) {
       setReviewError(messageForError(err))
     } finally {
@@ -141,11 +170,16 @@ function FacultyProjectProposals() {
   return (
     <DashboardLayout navItems={facultyNavItems}>
       <h1 className="content-title">Faculty Proposal Review</h1>
-      <p className="content-subtitle">Review project proposals submitted by student teams.</p>
+
+      <p className="content-subtitle">
+        Review project proposals submitted by student teams.
+      </p>
 
       {listLoading ? (
         <div className="faculty-proposal-card">
-          <p className="faculty-proposal-loading">Loading submitted proposals...</p>
+          <p className="faculty-proposal-loading">
+            Loading submitted proposals...
+          </p>
         </div>
       ) : listError ? (
         <div className="faculty-proposal-card">
@@ -154,7 +188,9 @@ function FacultyProjectProposals() {
       ) : proposals.length === 0 ? (
         <div className="faculty-proposal-empty-card">
           <h2>No submitted proposals</h2>
-          <p>Submitted project proposals will appear here for faculty review.</p>
+          <p>
+            Submitted project proposals will appear here for faculty review.
+          </p>
         </div>
       ) : (
         <div className="faculty-proposal-list">
@@ -163,16 +199,31 @@ function FacultyProjectProposals() {
               <div className="faculty-proposal-row-main">
                 <div className="faculty-proposal-row-top">
                   <h3>{proposal.title}</h3>
-                  <Badge tone={statusTone[proposal.status] || 'neutral'}>{proposal.status}</Badge>
+
+                  <Badge tone={statusTone[proposal.status] || 'neutral'}>
+                    {proposal.status}
+                  </Badge>
                 </div>
+
                 <div className="faculty-proposal-row-meta">
                   <span>{proposal.teamName}</span>
-                  <span>Submitted by {proposal.submittedByName || 'Unknown'}</span>
+
+                  <span>
+                    Submitted by {proposal.submittedByName || 'Unknown'}
+                  </span>
+
                   <span>{formatDate(proposal.submittedAt)}</span>
-                  {proposal.technologyStack && <span>{proposal.technologyStack}</span>}
+
+                  {proposal.technologyStack && (
+                    <span>{proposal.technologyStack}</span>
+                  )}
                 </div>
               </div>
-              <Button variant="secondary" onClick={() => viewDetails(proposal.id)}>
+
+              <Button
+                variant="secondary"
+                onClick={() => viewDetails(proposal.id)}
+              >
                 View Details
               </Button>
             </div>
@@ -183,69 +234,143 @@ function FacultyProjectProposals() {
       {selectedId && (
         <div className="faculty-proposal-details-card">
           {detailLoading ? (
-            <p className="faculty-proposal-loading">Loading proposal details...</p>
+            <p className="faculty-proposal-loading">
+              Loading proposal details...
+            </p>
           ) : detailError ? (
             <p className="faculty-proposal-error">{detailError}</p>
           ) : detail ? (
             <>
               <div className="faculty-proposal-details-top">
                 <h2>{detail.title}</h2>
-                <Badge tone={statusTone[detail.status] || 'neutral'}>{detail.status}</Badge>
+
+                <Badge tone={statusTone[detail.status] || 'neutral'}>
+                  {detail.status}
+                </Badge>
               </div>
 
               <div className="faculty-proposal-field">
-                <span className="faculty-proposal-field-label">Team</span>
-                <p className="faculty-proposal-field-value">{detail.teamName}</p>
+                <span className="faculty-proposal-field-label">
+                  Team
+                </span>
+
+                <p className="faculty-proposal-field-value">
+                  {detail.teamName}
+                </p>
               </div>
+
               <div className="faculty-proposal-field">
-                <span className="faculty-proposal-field-label">Description</span>
-                <p className="faculty-proposal-field-value">{detail.description}</p>
+                <span className="faculty-proposal-field-label">
+                  Description
+                </span>
+
+                <p className="faculty-proposal-field-value">
+                  {detail.description}
+                </p>
               </div>
+
               <div className="faculty-proposal-field">
-                <span className="faculty-proposal-field-label">Objectives</span>
-                <p className="faculty-proposal-field-value">{detail.objectives || 'Not provided.'}</p>
+                <span className="faculty-proposal-field-label">
+                  Objectives
+                </span>
+
+                <p className="faculty-proposal-field-value">
+                  {detail.objectives || 'Not provided.'}
+                </p>
               </div>
+
               <div className="faculty-proposal-field">
-                <span className="faculty-proposal-field-label">Technology Stack</span>
-                <p className="faculty-proposal-field-value">{detail.technologyStack || 'Not provided.'}</p>
+                <span className="faculty-proposal-field-label">
+                  Technology Stack
+                </span>
+
+                <p className="faculty-proposal-field-value">
+                  {detail.technologyStack || 'Not provided.'}
+                </p>
               </div>
+
               <div className="faculty-proposal-field">
-                <span className="faculty-proposal-field-label">Submitted By</span>
-                <p className="faculty-proposal-field-value">{detail.submittedByName || 'Unknown'}</p>
+                <span className="faculty-proposal-field-label">
+                  Submitted By
+                </span>
+
+                <p className="faculty-proposal-field-value">
+                  {detail.submittedByName || 'Unknown'}
+                </p>
               </div>
+
               <div className="faculty-proposal-field">
-                <span className="faculty-proposal-field-label">Submitted At</span>
-                <p className="faculty-proposal-field-value">{formatDate(detail.submittedAt)}</p>
+                <span className="faculty-proposal-field-label">
+                  Submitted At
+                </span>
+
+                <p className="faculty-proposal-field-value">
+                  {formatDate(detail.submittedAt)}
+                </p>
               </div>
 
               {detail.reviewDecision && (
                 <div className="faculty-proposal-review-summary">
                   <h3>Review</h3>
+
                   <div className="faculty-proposal-field">
-                    <span className="faculty-proposal-field-label">Decision</span>
-                    <p className="faculty-proposal-field-value">{detail.reviewDecision}</p>
+                    <span className="faculty-proposal-field-label">
+                      Decision
+                    </span>
+
+                    <p className="faculty-proposal-field-value">
+                      {detail.reviewDecision}
+                    </p>
                   </div>
+
                   <div className="faculty-proposal-field">
-                    <span className="faculty-proposal-field-label">Comments</span>
-                    <p className="faculty-proposal-field-value">{detail.reviewComments || 'No comments.'}</p>
+                    <span className="faculty-proposal-field-label">
+                      Comments
+                    </span>
+
+                    <p className="faculty-proposal-field-value">
+                      {detail.reviewComments || 'No comments.'}
+                    </p>
                   </div>
+
                   <div className="faculty-proposal-field">
-                    <span className="faculty-proposal-field-label">Reviewed By</span>
-                    <p className="faculty-proposal-field-value">{detail.reviewedByName}</p>
+                    <span className="faculty-proposal-field-label">
+                      Reviewed By
+                    </span>
+
+                    <p className="faculty-proposal-field-value">
+                      {detail.reviewedByName}
+                    </p>
                   </div>
+
                   <div className="faculty-proposal-field">
-                    <span className="faculty-proposal-field-label">Reviewed At</span>
-                    <p className="faculty-proposal-field-value">{formatDate(detail.reviewedAt)}</p>
+                    <span className="faculty-proposal-field-label">
+                      Reviewed At
+                    </span>
+
+                    <p className="faculty-proposal-field-value">
+                      {formatDate(detail.reviewedAt)}
+                    </p>
                   </div>
                 </div>
               )}
 
-              {reviewSuccess && <div className="faculty-proposal-success">{reviewSuccess}</div>}
-              {reviewError && <div className="faculty-proposal-error-banner">{reviewError}</div>}
+              {reviewSuccess && (
+                <div className="faculty-proposal-success">
+                  {reviewSuccess}
+                </div>
+              )}
+
+              {reviewError && (
+                <div className="faculty-proposal-error-banner">
+                  {reviewError}
+                </div>
+              )}
 
               {detail.status === 'SUBMITTED' && (
                 <div className="faculty-proposal-review-form">
                   <h3>Review</h3>
+
                   <Textarea
                     id="reviewComments"
                     name="reviewComments"
@@ -254,6 +379,7 @@ function FacultyProjectProposals() {
                     value={comments}
                     onChange={(e) => setComments(e.target.value)}
                   />
+
                   <div className="faculty-proposal-review-actions">
                     <Button
                       onClick={() => handleReview('APPROVED')}
@@ -261,6 +387,7 @@ function FacultyProjectProposals() {
                     >
                       {reviewing ? 'Submitting...' : 'Approve'}
                     </Button>
+
                     <Button
                       variant="secondary"
                       onClick={() => handleReview('REJECTED')}

@@ -1,5 +1,11 @@
 import { Link } from 'react-router-dom'
-import { LayoutDashboard, UserRound, Users, FileText, ListChecks } from 'lucide-react'
+import {
+  LayoutDashboard,
+  UserRound,
+  Users,
+  FileText,
+  ListChecks,
+} from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
 import '../styles/dashboard.css'
 
@@ -8,7 +14,7 @@ const studentNavItems = [
   { label: 'My Profile', icon: UserRound, path: '/student/profile' },
   { label: 'My Team', icon: Users, path: '/student/team' },
   { label: 'Project Proposal', icon: FileText, path: '/student/proposal' },
-  { label: 'Tasks / Projects', icon: ListChecks, path: null },
+  { label: 'Tasks / Projects', icon: ListChecks, path: '/student/projects' },
 ]
 
 function StudentDashboard() {
@@ -24,18 +30,24 @@ function StudentDashboard() {
           <h2>My Profile</h2>
           <p>View and update your academic profile.</p>
         </Link>
+
         <Link to="/student/team" className="dashboard-card">
           <h2>My Team</h2>
           <p>View or create your project team.</p>
         </Link>
+
         <Link to="/student/proposal" className="dashboard-card">
           <h2>Project Proposal</h2>
           <p>View or manage your team's project proposal.</p>
         </Link>
-        <div className="dashboard-card">
+
+        <Link to="/student/projects" className="dashboard-card">
           <h2>Tasks / Projects</h2>
-          <p>Coming soon.</p>
-        </div>
+          <p>
+            Open your Agile project workspace, manage progress,
+            and prepare for sprint planning.
+          </p>
+        </Link>
       </div>
     </DashboardLayout>
   )

@@ -31,7 +31,10 @@ function DashboardLayout({ navItems, children }) {
 
             if (!item.path) {
               return (
-                <div key={item.label} className="sidebar-nav-item is-disabled">
+                <div
+                  key={item.label}
+                  className="sidebar-nav-item is-disabled"
+                >
                   <Icon size={18} strokeWidth={1.75} />
                   <span>{item.label}</span>
                   <span className="sidebar-soon-badge">Soon</span>
@@ -55,7 +58,10 @@ function DashboardLayout({ navItems, children }) {
       </aside>
 
       {mobileNavOpen && (
-        <div className="sidebar-backdrop" onClick={() => setMobileNavOpen(false)} />
+        <div
+          className="sidebar-backdrop"
+          onClick={() => setMobileNavOpen(false)}
+        />
       )}
 
       <div className="dashboard-main">
@@ -70,19 +76,25 @@ function DashboardLayout({ navItems, children }) {
 
           <div className="header-user-info">
             <div className="header-user-avatar">{initials}</div>
+
             <div>
               <div className="header-user-name">{user.fullName}</div>
               <div className="header-user-role">{user.role}</div>
             </div>
           </div>
 
-          <button className="header-logout-button" onClick={logout}>
+          <button
+            className="header-logout-button"
+            onClick={logout}
+          >
             <LogOut size={16} strokeWidth={1.75} />
             <span>Logout</span>
           </button>
         </header>
 
-        <main className="dashboard-content">{children}</main>
+        <main className="dashboard-content">
+          {children}
+        </main>
       </div>
     </div>
   )

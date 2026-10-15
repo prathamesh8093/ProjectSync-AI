@@ -5,7 +5,7 @@ const AuthContext = createContext(null)
 const STORAGE_KEY = 'projectsync_auth'
 
 function loadStoredAuth() {
-  const raw = localStorage.getItem(STORAGE_KEY)
+  const raw = sessionStorage.getItem(STORAGE_KEY)
   if (!raw) return { token: null, user: null }
 
   try {
@@ -25,12 +25,12 @@ export function AuthProvider({ children }) {
   const login = ({ token, email, fullName, role }) => {
     const user = { email, fullName, role }
     setAuth({ token, user })
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ token, user }))
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ token, user }))
   }
 
   const logout = () => {
     setAuth({ token: null, user: null })
-    localStorage.removeItem(STORAGE_KEY)
+    sessionStorage.removeItem(STORAGE_KEY)
   }
 
   const value = {

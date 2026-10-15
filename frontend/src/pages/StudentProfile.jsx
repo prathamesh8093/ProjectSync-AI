@@ -14,7 +14,7 @@ const studentNavItems = [
   { label: 'My Profile', icon: UserRound, path: '/student/profile' },
   { label: 'My Team', icon: Users, path: '/student/team' },
   { label: 'Project Proposal', icon: FileText, path: '/student/proposal' },
-  { label: 'Tasks / Projects', icon: ListChecks, path: null },
+  { label: 'Tasks / Projects', icon: ListChecks, path: '/student/projects' },
 ]
 
 const emptyForm = { studentId: '', department: '', year: '', bio: '' }
@@ -37,6 +37,7 @@ function StudentProfile() {
       try {
         const response = await getStudentProfile()
         if (!isMounted) return
+
         setProfileExists(true)
         setFormData({
           studentId: response.data.studentId || '',
@@ -46,10 +47,13 @@ function StudentProfile() {
         })
       } catch (err) {
         if (!isMounted) return
+
         if (err.response && err.response.status === 404) {
           setProfileExists(false)
         } else {
-          setLoadError('Unable to load your profile right now. Please try again later.')
+          setLoadError(
+            'Unable to load your profile right now. Please try again later.'
+          )
         }
       } finally {
         if (isMounted) setLoading(false)
@@ -57,13 +61,17 @@ function StudentProfile() {
     }
 
     loadProfile()
+
     return () => {
       isMounted = false
     }
   }, [])
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    })
   }
 
   const validate = () => {
@@ -75,6 +83,7 @@ function StudentProfile() {
 
     if (formData.year !== '') {
       const yearNum = Number(formData.year)
+
       if (!Number.isInteger(yearNum) || yearNum < 1 || yearNum > 6) {
         newErrors.year = 'Year must be a whole number between 1 and 6.'
       }
@@ -90,9 +99,11 @@ function StudentProfile() {
 
     const newErrors = validate()
     setErrors(newErrors)
+
     if (Object.keys(newErrors).length > 0) return
 
     setSaving(true)
+
     try {
       const payload = {
         studentId: formData.studentId.trim(),
@@ -100,22 +111,31 @@ function StudentProfile() {
         year: formData.year === '' ? null : Number(formData.year),
         bio: formData.bio.trim() || null,
       }
+
       const response = await updateStudentProfile(payload)
+
       setFormData({
         studentId: response.data.studentId || '',
         department: response.data.department || '',
         year: response.data.year ?? '',
         bio: response.data.bio || '',
       })
+
       setProfileExists(true)
       setSaveSuccess(true)
     } catch (err) {
       if (err.response && err.response.status === 409) {
-        setErrors({ studentId: 'This Student ID is already in use.' })
+        setErrors({
+          studentId: 'This Student ID is already in use.',
+        })
       } else if (err.response && err.response.status === 400) {
-        setSaveError('Please check the highlighted fields and try again.')
+        setSaveError(
+          'Please check the highlighted fields and try again.'
+        )
       } else {
-        setSaveError('Something went wrong while saving. Please try again.')
+        setSaveError(
+          'Something went wrong while saving. Please try again.'
+        )
       }
     } finally {
       setSaving(false)
@@ -132,39 +152,59 @@ function StudentProfile() {
   return (
     <DashboardLayout navItems={studentNavItems}>
       <h1 className="content-title">My Profile</h1>
-      <p className="content-subtitle">Manage your academic profile information.</p>
+      <p className="content-subtitle">
+        Manage your academic profile information.
+      </p>
 
       {loading ? (
         <div className="profile-card">
-          <p className="profile-loading">Loading your profile...</p>
+          <p className="profile-loading">
+            Loading your profile...
+          </p>
         </div>
       ) : loadError ? (
         <div className="profile-card">
-          <p className="profile-load-error">{loadError}</p>
+          <p className="profile-load-error">
+            {loadError}
+          </p>
         </div>
       ) : (
         <>
           <div className="profile-header-card">
             <div className="profile-avatar">{initials}</div>
+
             <div className="profile-header-info">
               <h2>{user.fullName}</h2>
+
               <div className="profile-header-meta">
                 <Badge tone="primary">{user.role}</Badge>
-                {formData.department && <span>{formData.department}</span>}
-                {formData.year !== '' && <span>Year {formData.year}</span>}
+
+                {formData.department && (
+                  <span>{formData.department}</span>
+                )}
+
+                {formData.year !== '' && (
+                  <span>Year {formData.year}</span>
+                )}
               </div>
             </div>
           </div>
 
           {!profileExists && (
             <div className="profile-empty-note">
-              You haven't set up your academic profile yet. Fill in the details below to get started.
+              You haven't set up your academic profile yet.
+              Fill in the details below to get started.
             </div>
           )}
 
-          <form className="profile-form-card" onSubmit={handleSubmit} noValidate>
+          <form
+            className="profile-form-card"
+            onSubmit={handleSubmit}
+            noValidate
+          >
             <div className="profile-section">
               <h3>Academic information</h3>
+
               <div className="profile-form-grid">
                 <Input
                   id="studentId"
@@ -175,6 +215,7 @@ function StudentProfile() {
                   onChange={handleChange}
                   error={errors.studentId}
                 />
+
                 <Input
                   id="department"
                   name="department"
@@ -183,6 +224,7 @@ function StudentProfile() {
                   value={formData.department}
                   onChange={handleChange}
                 />
+
                 <Input
                   id="year"
                   name="year"
@@ -200,6 +242,7 @@ function StudentProfile() {
 
             <div className="profile-section">
               <h3>About</h3>
+
               <Textarea
                 id="bio"
                 name="bio"
@@ -210,9 +253,16 @@ function StudentProfile() {
               />
             </div>
 
-            {saveError && <div className="profile-save-error">{saveError}</div>}
+            {saveError && (
+              <div className="profile-save-error">
+                {saveError}
+              </div>
+            )}
+
             {saveSuccess && (
-              <div className="profile-save-success">Profile saved successfully.</div>
+              <div className="profile-save-success">
+                Profile saved successfully.
+              </div>
             )}
 
             <div className="profile-form-actions">

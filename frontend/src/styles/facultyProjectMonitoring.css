@@ -1,0 +1,377 @@
+.faculty-monitoring-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.faculty-monitoring-header .content-title {
+  margin-bottom: 0.35rem;
+}
+
+.faculty-monitoring-header .content-subtitle {
+  margin-bottom: 0;
+}
+
+.faculty-monitoring-header button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  white-space: nowrap;
+}
+
+.faculty-monitoring-card,
+.faculty-monitoring-empty-card,
+.faculty-monitoring-project-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.faculty-monitoring-card {
+  padding: 1.5rem;
+}
+
+.faculty-monitoring-loading,
+.faculty-monitoring-error {
+  margin: 0;
+}
+
+.faculty-monitoring-error {
+  color: #b91c1c;
+}
+
+.faculty-monitoring-empty-card {
+  padding: 2rem;
+  text-align: center;
+}
+
+.faculty-monitoring-empty-card h2 {
+  margin: 0 0 0.5rem;
+}
+
+.faculty-monitoring-empty-card p {
+  margin: 0;
+  color: #64748b;
+}
+
+.faculty-monitoring-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.faculty-monitoring-project-card {
+  padding: 1.5rem;
+}
+
+.faculty-monitoring-project-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.faculty-monitoring-project-top h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.2rem;
+}
+
+.faculty-monitoring-team {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.faculty-monitoring-progress-section {
+  margin-bottom: 1.5rem;
+}
+
+.faculty-monitoring-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.faculty-monitoring-progress-header strong {
+  font-size: 1rem;
+}
+
+.faculty-monitoring-progress-track {
+  width: 100%;
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+.faculty-monitoring-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #2563eb;
+  transition: width 0.25s ease;
+}
+
+.faculty-monitoring-stats {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.faculty-monitoring-stat {
+  padding: 0.9rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.faculty-monitoring-stat span {
+  display: block;
+  margin-bottom: 0.3rem;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.faculty-monitoring-stat strong {
+  display: block;
+  font-size: 1.2rem;
+}
+
+.faculty-monitoring-section {
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.faculty-monitoring-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.faculty-monitoring-section-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.3rem;
+  font-size: 1rem;
+}
+
+.faculty-monitoring-section-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.faculty-monitoring-section-empty {
+  padding: 1rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  color: #64748b;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.faculty-monitoring-sprint-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.faculty-monitoring-sprint-card {
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.faculty-monitoring-sprint-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.faculty-monitoring-sprint-top h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.98rem;
+}
+
+.faculty-monitoring-sprint-goal {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.faculty-monitoring-sprint-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.faculty-monitoring-sprint-meta > div {
+  padding: 0.7rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.faculty-monitoring-sprint-meta span {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.faculty-monitoring-sprint-meta strong {
+  display: block;
+  font-size: 0.85rem;
+}
+
+.faculty-monitoring-sprint-progress {
+  margin-bottom: 0.8rem;
+}
+
+.faculty-monitoring-sprint-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.faculty-monitoring-sprint-stats strong {
+  color: #0f172a;
+}
+
+.faculty-monitoring-task-list {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.faculty-monitoring-task-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 250px);
+  gap: 1.25rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.faculty-monitoring-task-main {
+  min-width: 0;
+}
+
+.faculty-monitoring-task-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.faculty-monitoring-task-title-row h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.faculty-monitoring-task-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.faculty-monitoring-task-description {
+  margin: 0 0 0.8rem;
+  color: #64748b;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.faculty-monitoring-task-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.faculty-monitoring-task-meta > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.faculty-monitoring-task-meta strong {
+  color: #0f172a;
+}
+
+.faculty-monitoring-task-progress {
+  align-self: center;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .faculty-monitoring-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .faculty-monitoring-sprint-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .faculty-monitoring-task-card {
+    grid-template-columns: 1fr;
+  }
+
+  .faculty-monitoring-task-progress {
+    align-self: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .faculty-monitoring-header,
+  .faculty-monitoring-project-top,
+  .faculty-monitoring-sprint-top {
+    flex-direction: column;
+  }
+
+  .faculty-monitoring-header button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .faculty-monitoring-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .faculty-monitoring-sprint-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .faculty-monitoring-task-title-row {
+    flex-direction: column;
+  }
+
+  .faculty-monitoring-task-badges {
+    justify-content: flex-start;
+  }
+
+  .faculty-monitoring-task-meta {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
