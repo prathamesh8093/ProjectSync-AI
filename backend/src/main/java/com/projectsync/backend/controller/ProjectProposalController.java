@@ -95,4 +95,14 @@ public class ProjectProposalController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
+
+    @GetMapping("/{proposalId}/sprint-breakdown")
+    public ResponseEntity<?> getSprintBreakdown(Authentication authentication,
+                                              @PathVariable UUID proposalId) {
+        try {
+            return ResponseEntity.ok(proposalService.getSprintBreakdown(proposalId));
+        } catch (ResourceNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 }

@@ -86,7 +86,8 @@ public class VcsController {
             @Valid @RequestBody CloneRepoRequest req,
             Authentication auth) {
         String username = resolveUsername(auth);
-        CloneResultDto result = gitService.cloneRepository(req, username);
+        boolean isFacultyOrAdmin = isFacultyOrAdmin(auth);
+        CloneResultDto result = gitService.cloneRepository(req, username, isFacultyOrAdmin);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 

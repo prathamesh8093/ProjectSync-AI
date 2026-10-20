@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 
 public interface ProjectRepository extends JpaRepository<Project, UUID> {
 
@@ -21,4 +22,8 @@ public interface ProjectRepository extends JpaRepository<Project, UUID> {
     Optional<Project> findByProjectCodeIgnoreCase(String projectCode);
 
     boolean existsByProjectCode(String projectCode);
+
+    List<Project> findByStatus(String status);
+    
+    List<Project> findByStatusIn(List<String> statuses);
 }

@@ -32,17 +32,20 @@ public class ProjectProposalService {
     private final TeamMemberRepository teamMemberRepository;
     private final UserRepository userRepository;
     private final ProjectCodeGenerator projectCodeGenerator;
+    private final AiSprintBreakdownService sprintBreakdownService;
 
     public ProjectProposalService(ProjectProposalRepository proposalRepository,
                                    ProposalReviewRepository proposalReviewRepository,
                                    TeamMemberRepository teamMemberRepository,
                                    UserRepository userRepository,
-                                   ProjectCodeGenerator projectCodeGenerator) {
+                                   ProjectCodeGenerator projectCodeGenerator,
+                                   AiSprintBreakdownService sprintBreakdownService) {
         this.proposalRepository = proposalRepository;
         this.proposalReviewRepository = proposalReviewRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.userRepository = userRepository;
         this.projectCodeGenerator = projectCodeGenerator;
+        this.sprintBreakdownService = sprintBreakdownService;
     }
 
     @Transactional
@@ -210,5 +213,11 @@ public class ProjectProposalService {
         });
 
         return response;
+    }
+
+    public com.projectsync.backend.dto.AiSprintBreakdownResponse getSprintBreakdown(UUID proposalId) {
+        ProjectProposal proposal = proposalRepository.findById(proposalId)
+                .orElseThrow(() -> new ResourceNotFoundException("Proposal not found."));
+        return sprintBreakdownService.generateBreakdown(proposal);
     }
 }

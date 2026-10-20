@@ -8,6 +8,7 @@ import {
   addTeamMember,
   getTeamMembers,
 } from '../services/teamService.js'
+import { searchStudents } from '../services/userService.js'
 import Input from '../components/ui/Input.jsx'
 import Button from '../components/ui/Button.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -42,6 +43,26 @@ function StudentTeam() {
   const [addMemberError, setAddMemberError] = useState('')
   const [addingMember, setAddingMember] = useState(false)
   const [addMemberSuccess, setAddMemberSuccess] = useState(false)
+
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState('')
+
+  const handleSearchStudents = async (e) => {
+    e.preventDefault()
+    if (!searchQuery.trim()) return
+    setIsSearching(true)
+    setSearchError('')
+    try {
+      const response = await searchStudents(searchQuery.trim())
+      setSearchResults(response.data)
+    } catch (err) {
+      setSearchError('Failed to search students.')
+    } finally {
+      setIsSearching(false)
+    }
+  }
 
   const loadMembers = useCallback(async (teamId) => {
     setMembersLoading(true)
@@ -282,23 +303,68 @@ function StudentTeam() {
             <h3>Add Member</h3>
 
             {isLeader ? (
-              <form className="team-add-member-form" onSubmit={handleAddMemberSubmit} noValidate>
-                <Input
-                  id="studentUserId"
-                  name="studentUserId"
-                  label="Student User ID"
-                  placeholder="Paste the student's user ID"
-                  value={addMemberId}
-                  onChange={(e) => setAddMemberId(e.target.value)}
-                  error={addMemberError}
-                />
-                <Button type="submit" loading={addingMember}>
-                  {addingMember ? 'Adding...' : 'Add Member'}
-                </Button>
-                {addMemberSuccess && (
-                  <div className="team-save-success">Member added successfully.</div>
+              <div className="team-add-member-container">
+                <form className="team-search-member-form" onSubmit={handleSearchStudents} style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', marginBottom: '20px' }}>
+                  <div style={{ flex: 1 }}>
+                    <Input
+                      id="searchQuery"
+                      name="searchQuery"
+                      label="Search Students"
+                      placeholder="Search by name or email"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      error={searchError}
+                    />
+                  </div>
+                  <Button type="submit" loading={isSearching} style={{ marginBottom: searchError ? '24px' : '0' }}>
+                    Search
+                  </Button>
+                </form>
+
+                {searchResults.length > 0 && (
+                  <div className="search-results-list" style={{ border: '1px solid #ddd', borderRadius: '4px', padding: '10px', marginBottom: '20px' }}>
+                    <h4 style={{ marginTop: 0, marginBottom: '10px' }}>Search Results</h4>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {searchResults.map((s) => (
+                        <li key={s.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #f0f0f0' }}>
+                          <div>
+                            <strong>{s.fullName}</strong>
+                            <div style={{ fontSize: '0.85em', color: '#666' }}>{s.email}</div>
+                          </div>
+                          <Button 
+                            variant="secondary" 
+                            size="sm"
+                            onClick={() => {
+                              setAddMemberId(s.id);
+                              // We could submit immediately, but let's just fill the form below
+                            }}
+                          >
+                            Select
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
-              </form>
+
+                <form className="team-add-member-form" onSubmit={handleAddMemberSubmit} noValidate>
+                  <Input
+                    id="studentUserId"
+                    name="studentUserId"
+                    label="Selected Student User ID"
+                    placeholder="Paste the student's user ID or search above"
+                    value={addMemberId}
+                    onChange={(e) => setAddMemberId(e.target.value)}
+                    error={addMemberError}
+                  />
+                  <Button type="submit" loading={addingMember}>
+                    {addingMember ? 'Adding...' : 'Add Member'}
+                  </Button>
+                  {addMemberSuccess && (
+                    <div className="team-save-success">Member added successfully.</div>
+                  )}
+                </form>
+              </div>
             ) : (
               <p className="team-leader-note">Only the team leader can add members.</p>
             )}

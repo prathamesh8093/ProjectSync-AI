@@ -222,7 +222,7 @@ public class GitServiceTest {
         cloneReq.setName("cloned-repo");
         cloneReq.setDescription("A successfully cloned repository");
 
-        CloneResultDto cloneResult = gitService.cloneRepository(cloneReq, "clone-user");
+        CloneResultDto cloneResult = gitService.cloneRepository(cloneReq, "clone-user", true);
 
         assertNotNull(cloneResult);
         assertNotNull(cloneResult.getRepository());
@@ -242,13 +242,14 @@ public class GitServiceTest {
         CreateRepoRequest srcReq = new CreateRepoRequest("internal-team-repo", "Self-hosted team codebase", "main", true);
         RepositoryDetailsDto srcRepo = gitService.createRepository(srcReq, "team-lead");
 
-        // 2. Clone using solely the internal repository name
+        // 2. Clone using solely the internal repository name (we simulate same team/owner by using team-lead, or simulate faculty)
         CloneRepoRequest cloneReq = new CloneRepoRequest();
-        cloneReq.setRemoteUrl("internal-team-repo"); // Internal repo name without any external URL
+        cloneReq.setRemoteUrl("internal-team-repo");
         cloneReq.setName("my-forked-repo");
         cloneReq.setDescription("Forked team codebase");
 
-        CloneResultDto cloneResult = gitService.cloneRepository(cloneReq, "student2");
+        // Here facultyOrAdmin is true since owner is student2 and repo owner is team-lead
+        CloneResultDto cloneResult = gitService.cloneRepository(cloneReq, "student2", true);
 
         assertNotNull(cloneResult);
         assertNotNull(cloneResult.getRepository());
@@ -260,6 +261,24 @@ public class GitServiceTest {
         Path clonedDir = Path.of(cloneResult.getRepository().getDiskPath());
         assertTrue(Files.exists(clonedDir.resolve(".git")));
         assertTrue(Files.exists(clonedDir.resolve("README.md")));
+    }
+
+    @Test
+    void testCloneInternalRepositoryUnauthorized() {
+        // 1. Create a source repo
+        CreateRepoRequest srcReq = new CreateRepoRequest("internal-secure-repo", "Self-hosted team codebase", "main", true);
+        gitService.createRepository(srcReq, "team-lead");
+
+        // 2. Clone using solely the internal repository name
+        CloneRepoRequest cloneReq = new CloneRepoRequest();
+        cloneReq.setRemoteUrl("internal-secure-repo");
+        cloneReq.setName("stolen-repo");
+        cloneReq.setDescription("Stolen team codebase");
+
+        // Here facultyOrAdmin is false, and username is malicious-student which does not match team-lead
+        assertThrows(com.projectsync.backend.exception.ForbiddenOperationException.class, () -> {
+            gitService.cloneRepository(cloneReq, "malicious-student", false);
+        });
     }
 
     @Test

@@ -1,554 +1,619 @@
-import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
 import {
   LayoutDashboard,
   UserRound,
   Users,
   FileText,
   ClipboardCheck,
-  RefreshCw,
-  CalendarDays,
-  ListChecks,
-  UserCheck,
-  ArrowLeft,
-  ArrowRight,
-  FolderGit2,
+  CheckCircle2,
+  AlertTriangle,
+  OctagonAlert,
+  CircleDashed,
+  Sparkles,
+  Award,
+  ShieldCheck,
+  Clock,
+  X,
+  Copy,
+  Check,
+  TrendingUp,
+  AlertCircle,
 } from 'lucide-react'
 import DashboardLayout from '../layouts/DashboardLayout.jsx'
-import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
-import { getFacultyProjects } from '../services/facultyProjectMonitoringService.js'
-import '../styles/facultyProjectMonitoring.css'
+import Badge from '../components/ui/Badge.jsx'
+import {
+  getMonitoredProjects,
+  getProjectAnalytics,
+  analyzeSprint,
+  getEvaluationReport,
+  getRubricEvaluation,
+  getCodeInspection,
+  getDelayRiskPrediction,
+} from '../services/facultyAnalyticsService.js'
+import '../styles/monitoring.css'
 
 const facultyNavItems = [
   { label: 'Dashboard', icon: LayoutDashboard, path: '/faculty/dashboard' },
   { label: 'Faculty Profile', icon: UserRound, path: '/faculty/profile' },
   { label: 'Student Teams', icon: Users, path: null },
   { label: 'Project Proposals', icon: FileText, path: '/faculty/proposals' },
-  {
-    label: 'Project Monitoring',
-    icon: ClipboardCheck,
-    path: '/faculty/projects',
-  },
+  { label: 'Project Monitoring', icon: ClipboardCheck, path: '/faculty/monitoring' },
 ]
 
-const projectStatusTone = {
-  NOT_STARTED: 'neutral',
-  ACTIVE: 'primary',
-  COMPLETED: 'success',
+// Status is always icon + label + color, never color alone.
+const healthByRisk = {
+  LOW: { label: 'Healthy', tone: 'success', Icon: CheckCircle2 },
+  MEDIUM: { label: 'Imbalance', tone: 'warning', Icon: AlertTriangle },
+  HIGH: { label: 'Critical / Free-Rider Alert', tone: 'danger', Icon: OctagonAlert },
 }
+const notAnalyzed = { label: 'Not analyzed yet', tone: 'neutral', Icon: CircleDashed }
 
-const sprintStatusTone = {
-  PLANNED: 'neutral',
-  ACTIVE: 'primary',
-  COMPLETED: 'success',
-}
+const severityTone = { HIGH: 'danger', MEDIUM: 'warning', LOW: 'neutral' }
 
-const taskStatusTone = {
-  TODO: 'neutral',
-  IN_PROGRESS: 'primary',
-  IN_REVIEW: 'warning',
-  DONE: 'success',
-}
-
-const priorityTone = {
-  LOW: 'neutral',
-  MEDIUM: 'primary',
-  HIGH: 'warning',
-  CRITICAL: 'danger',
-}
-
-function messageForError(error) {
-  if (!error.response) {
-    return 'Unable to connect to the server. Please try again.'
+function ContributionChart({ metrics }) {
+  if (metrics.length === 0) {
+    return <p className="mon-empty">Run the AI analysis to compute contribution shares.</p>
   }
-
-  switch (error.response.status) {
-    case 401:
-      return 'Your session has expired. Please log in again.'
-    case 403:
-      return 'Only faculty can access project monitoring.'
-    case 404:
-      return 'Project not found.'
-    default:
-      return 'Unable to load project monitoring data. Please try again.'
-  }
+  const sorted = [...metrics].sort((a, b) => b.contributionPercentage - a.contributionPercentage)
+  return (
+    <div className="mon-hbars" role="list">
+      {sorted.map((m) => (
+        <div
+          key={m.studentUserId}
+          className="mon-hbar-row"
+          role="listitem"
+          title={`${m.fullName}: ${m.contributionPercentage.toFixed(1)}% · ${m.totalCommits} commits · +${m.linesAdded}/-${m.linesDeleted} lines`}
+        >
+          <span className="mon-hbar-label">{m.fullName}</span>
+          <div className="mon-hbar-track">
+            <div className="mon-hbar-fill" style={{ width: `${Math.max(m.contributionPercentage, 0.5)}%` }} />
+          </div>
+          <span className="mon-hbar-value">{m.contributionPercentage.toFixed(0)}%</span>
+        </div>
+      ))}
+    </div>
+  )
 }
 
-function formatDate(dateValue) {
-  if (!dateValue) {
-    return '—'
+function VelocityChart({ sprints }) {
+  if (sprints.length === 0) {
+    return <p className="mon-empty">No sprints yet. The team creates them through the project API.</p>
   }
+  const maxPoints = Math.max(1, ...sprints.flatMap((s) => [s.plannedPoints, s.completedPoints]))
+  const maxCommits = Math.max(1, ...sprints.map((s) => s.commits))
 
-  const date = new Date(`${dateValue}T00:00:00`)
+  return (
+    <>
+      <div className="mon-legend">
+        <span><i className="mon-swatch mon-planned" /> Planned points</span>
+        <span><i className="mon-swatch mon-done" /> Completed points</span>
+      </div>
+      <div className="mon-vbars">
+        {sprints.map((s) => (
+          <div key={s.id} className="mon-vbar-group">
+            <div className="mon-vbar-pair">
+              {[
+                ['planned', s.plannedPoints, 'Planned'],
+                ['done', s.completedPoints, 'Completed'],
+              ].map(([kind, value, label]) => (
+                <div key={kind} className="mon-vbar-col" title={`${s.name} · ${label}: ${value} pts`}>
+                  <span className="mon-vbar-value">{value}</span>
+                  <div className={`mon-vbar mon-${kind}`} style={{ height: `${(value / maxPoints) * 100}%` }} />
+                </div>
+              ))}
+            </div>
+            <span className="mon-vbar-label">{s.name}</span>
+          </div>
+        ))}
+      </div>
 
-  if (Number.isNaN(date.getTime())) {
-    return dateValue
-  }
-
-  return date.toLocaleDateString(undefined, {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  })
-}
-
-function clampProgress(value) {
-  return Math.max(0, Math.min(100, Number(value) || 0))
+      <h4 className="mon-subhead">Commits per sprint</h4>
+      <div className="mon-hbars">
+        {sprints.map((s) => (
+          <div key={s.id} className="mon-hbar-row" title={`${s.name}: ${s.commits} commits · ${s.codeVolume} lines of code volume`}>
+            <span className="mon-hbar-label">{s.name}</span>
+            <div className="mon-hbar-track">
+              <div className="mon-hbar-fill" style={{ width: `${(s.commits / maxCommits) * 100}%` }} />
+            </div>
+            <span className="mon-hbar-value">{s.commits}</span>
+          </div>
+        ))}
+      </div>
+    </>
+  )
 }
 
 function FacultyProjectMonitoring() {
   const [projects, setProjects] = useState([])
+  const [projectId, setProjectId] = useState('')
+  const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [refreshing, setRefreshing] = useState(false)
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [analyzing, setAnalyzing] = useState(false)
+  const [exporting, setExporting] = useState(false)
 
-  const selectedProjectId = searchParams.get('projectId')
-  const selectedProject = projects.find(
-    (p) =>
-      String(p.projectId) === String(selectedProjectId) ||
-      (p.projectCode &&
-        String(p.projectCode).toLowerCase() ===
-          String(selectedProjectId).toLowerCase())
-  )
+  // Phase 1 Faculty AI States
+  const [delayRisk, setDelayRisk] = useState(null)
 
-  const loadProjects = async (showRefreshing = false) => {
-    if (showRefreshing) {
-      setRefreshing(true)
-    } else {
-      setLoading(true)
-    }
+  const [rubricOpen, setRubricOpen] = useState(false)
+  const [rubricData, setRubricData] = useState(null)
+  const [loadingRubric, setLoadingRubric] = useState(false)
+  const [rubricError, setRubricError] = useState('')
 
-    setError('')
+  const [codeAuditOpen, setCodeAuditOpen] = useState(false)
+  const [codeAuditData, setCodeAuditData] = useState(null)
+  const [loadingCodeAudit, setLoadingCodeAudit] = useState(false)
+  const [codeAuditError, setCodeAuditError] = useState('')
 
-    try {
-      const response = await getFacultyProjects()
-      setProjects(response.data || [])
-    } catch (requestError) {
-      console.error(requestError)
-      setError(messageForError(requestError))
-    } finally {
-      if (showRefreshing) {
-        setRefreshing(false)
-      } else {
+  const [copiedFeedback, setCopiedFeedback] = useState(false)
+
+  useEffect(() => {
+    getMonitoredProjects()
+      .then((response) => {
+        setProjects(response.data)
+        if (response.data.length > 0) setProjectId(response.data[0].id)
+        else setLoading(false)
+      })
+      .catch(() => {
+        setError('Unable to load projects right now.')
         setLoading(false)
-      }
+      })
+  }, [])
+
+  const load = useCallback(async (pid, sprintId) => {
+    setLoading(true)
+    setError('')
+    try {
+      const response = await getProjectAnalytics(pid, sprintId)
+      setData(response.data)
+      getDelayRiskPrediction(pid)
+        .then((res) => setDelayRisk(res.data))
+        .catch(() => setDelayRisk(null))
+    } catch {
+      setError('Unable to load analytics for this project.')
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (projectId) load(projectId)
+  }, [projectId, load])
+
+  const handleOpenRubric = async () => {
+    if (!projectId) return
+    setRubricOpen(true)
+    setRubricError('')
+    if (rubricData && rubricData.projectId === projectId) return
+    setLoadingRubric(true)
+    try {
+      const res = await getRubricEvaluation(projectId)
+      setRubricData(res.data)
+    } catch {
+      setRubricError('Failed to run AI Rubric Evaluation. Please try again.')
+    } finally {
+      setLoadingRubric(false)
     }
   }
 
-  useEffect(() => {
-    loadProjects()
-  }, [])
+  const handleOpenCodeAudit = async () => {
+    if (!projectId) return
+    setCodeAuditOpen(true)
+    setCodeAuditError('')
+    if (codeAuditData && codeAuditData.projectId === projectId) return
+    setLoadingCodeAudit(true)
+    try {
+      const res = await getCodeInspection(projectId)
+      setCodeAuditData(res.data)
+    } catch {
+      setCodeAuditError('Failed to run Code Quality & Role Audit. Please try again.')
+    } finally {
+      setLoadingCodeAudit(false)
+    }
+  }
+
+  const handleCopyFeedback = () => {
+    if (!rubricData?.suggestedFacultyFeedback) return
+    navigator.clipboard.writeText(rubricData.suggestedFacultyFeedback)
+    setCopiedFeedback(true)
+    setTimeout(() => setCopiedFeedback(false), 2500)
+  }
+
+  const handleAnalyze = async () => {
+    setAnalyzing(true)
+    setError('')
+    try {
+      const response = await analyzeSprint(projectId, data.selectedSprintId)
+      setData(response.data)
+    } catch {
+      setError('Analysis failed. Please try again.')
+    } finally {
+      setAnalyzing(false)
+    }
+  }
+
+  const handleExport = async () => {
+    // Open the tab synchronously so the popup blocker allows it, then fill it.
+    const tab = window.open('', '_blank')
+    setExporting(true)
+    try {
+      const response = await getEvaluationReport(projectId)
+      const url = URL.createObjectURL(new Blob([response.data], { type: 'text/html' }))
+      if (tab) tab.location.href = url
+      else window.location.href = url
+    } catch {
+      tab?.close()
+      setError('Unable to generate the evaluation report.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
+  const insight = data?.insight
+  const health = insight ? healthByRisk[insight.riskLevel] : notAnalyzed
+  const metrics = data?.metrics || []
+  const sprints = data?.sprints || []
 
   return (
     <DashboardLayout navItems={facultyNavItems}>
-      {!selectedProject ? (
-        <>
-          <div className="faculty-monitoring-header">
-            <div>
-              <h1 className="content-title">Faculty Project Monitoring</h1>
-              <p className="content-subtitle">
-                Select an approved student project to view its real-time progress, sprints, and task deliverables.
-              </p>
-            </div>
+      <h1 className="content-title">Project Monitoring</h1>
+      <p className="content-subtitle">Verified contribution analytics and AI risk alerts for approved projects.</p>
 
-            <Button
-              variant="secondary"
-              onClick={() => loadProjects(true)}
-              loading={refreshing}
-            >
-              <RefreshCw size={16} />
-              {refreshing ? 'Refreshing...' : 'Refresh'}
-            </Button>
-          </div>
-
-          {loading ? (
-            <div className="faculty-monitoring-card">
-              <p className="faculty-monitoring-loading">
-                Loading approved student projects...
-              </p>
-            </div>
-          ) : error ? (
-            <div className="faculty-monitoring-card">
-              <p className="faculty-monitoring-error">{error}</p>
-            </div>
-          ) : projects.length === 0 ? (
-            <div className="faculty-monitoring-empty-card">
-              <h2>No approved projects</h2>
-              <p>
-                Projects created from approved proposals will appear here for faculty monitoring.
-              </p>
-            </div>
-          ) : (
-            <div className="faculty-monitoring-selection-grid">
-              {projects.map((project) => (
-                <div
-                  key={project.projectId}
-                  className="faculty-monitoring-select-card"
-                >
-                  <div className="faculty-monitoring-select-card-header">
-                    <span className="faculty-monitoring-code-badge">
-                      {project.projectCode || 'PRJ-CODE'}
-                    </span>
-                    <Badge
-                      tone={
-                        projectStatusTone[project.projectStatus] || 'neutral'
-                      }
-                    >
-                      {project.projectStatus}
-                    </Badge>
-                  </div>
-
-                  <h3 className="faculty-monitoring-select-title">
-                    {project.projectName}
-                  </h3>
-                  <p className="faculty-monitoring-select-team">
-                    <Users size={15} /> Team: {project.teamName}
-                  </p>
-
-                  <div className="faculty-monitoring-select-meta">
-                    <div className="faculty-monitoring-select-meta-item">
-                      <span>Sprints</span>
-                      <strong>{(project.sprints || []).length}</strong>
-                    </div>
-                    <div className="faculty-monitoring-select-meta-item">
-                      <span>Total Tasks</span>
-                      <strong>{project.totalTasks || 0}</strong>
-                    </div>
-                    <div className="faculty-monitoring-select-meta-item">
-                      <span>Completed</span>
-                      <strong>{project.completedTasks || 0}</strong>
-                    </div>
-                  </div>
-
-                  <div className="faculty-monitoring-select-action">
-                    <Button
-                      variant="primary"
-                      onClick={() =>
-                        setSearchParams({
-                          projectId: project.projectCode || project.projectId,
-                        })
-                      }
-                    >
-                      Monitor Project Progress
-                      <ArrowRight size={16} />
-                    </Button>
-                  </div>
-                </div>
+      {projects.length > 0 && (
+        <div className="mon-filters">
+          <div className="ui-field">
+            <label htmlFor="project" className="ui-label">Project</label>
+            <select id="project" className="ui-input" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+              {projects.map((p) => (
+                <option key={p.id} value={p.id}>{p.title} ({p.teamName})</option>
               ))}
+            </select>
+          </div>
+          {sprints.length > 0 && (
+            <div className="ui-field">
+              <label htmlFor="sprint" className="ui-label">Sprint</label>
+              <select
+                id="sprint"
+                className="ui-input"
+                value={data.selectedSprintId || ''}
+                onChange={(e) => load(projectId, e.target.value)}
+              >
+                {sprints.map((s) => (
+                  <option key={s.id} value={s.id}>{s.name} ({s.startDate} → {s.endDate})</option>
+                ))}
+              </select>
             </div>
           )}
-        </>
-      ) : (
+        </div>
+      )}
+
+      {error && <div className="mon-error">{error}</div>}
+
+      {!loading && projects.length === 0 && !error ? (
+        <div className="mon-card"><p className="mon-empty">No approved projects to monitor yet.</p></div>
+      ) : loading && !data ? (
+        <div className="mon-card"><p className="mon-empty">Loading...</p></div>
+      ) : data && (
         <>
-          <div className="faculty-monitoring-top-nav">
-            <Button
-              variant="secondary"
-              onClick={() => setSearchParams({})}
-            >
-              <ArrowLeft size={16} />
-              Back to Projects List
-            </Button>
-
-            <div className="faculty-monitoring-nav-right">
-              <div className="faculty-monitoring-switcher">
-                <label htmlFor="project-switcher">Switch Project:</label>
-                <select
-                  id="project-switcher"
-                  value={selectedProject.projectCode || selectedProject.projectId}
-                  onChange={(e) =>
-                    setSearchParams({ projectId: e.target.value })
-                  }
-                >
-                  {projects.map((p) => (
-                    <option
-                      key={p.projectId}
-                      value={p.projectCode || p.projectId}
-                    >
-                      {p.projectCode ? `[${p.projectCode}] ` : ''}
-                      {p.projectName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <Button
-                variant="secondary"
-                onClick={() => loadProjects(true)}
-                loading={refreshing}
-              >
-                <RefreshCw size={16} />
-                {refreshing ? 'Refreshing...' : 'Refresh'}
+          <div className="mon-card mon-header">
+            <div>
+              <h2>{data.project.title}</h2>
+              <p className="mon-meta">Team {data.project.teamName}</p>
+            </div>
+            <Badge tone={health.tone}>
+              <health.Icon size={13} aria-hidden="true" className="mon-badge-icon" />
+              {health.label}
+            </Badge>
+            <div className="mon-actions">
+              <Button onClick={handleAnalyze} loading={analyzing} disabled={!data.selectedSprintId}>
+                {analyzing ? 'Analyzing...' : 'Run AI analysis'}
+              </Button>
+              <Button variant="secondary" onClick={handleOpenRubric} loading={loadingRubric}>
+                <Award size={14} style={{ marginRight: 6 }} />
+                Rubric Grading
+              </Button>
+              <Button variant="secondary" onClick={handleOpenCodeAudit} loading={loadingCodeAudit}>
+                <ShieldCheck size={14} style={{ marginRight: 6 }} />
+                Code &amp; Role Audit
+              </Button>
+              <Button variant="secondary" onClick={handleExport} loading={exporting}>
+                Export viva report
               </Button>
             </div>
           </div>
 
-          <div className="faculty-monitoring-project-card">
-            <div className="faculty-monitoring-project-top">
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.35rem' }}>
-                  <span className="faculty-monitoring-code-badge">
-                    {selectedProject.projectCode || 'PRJ-CODE'}
-                  </span>
-                  <h2 style={{ margin: 0 }}>{selectedProject.projectName}</h2>
+          {delayRisk && (
+            <div className="mon-forecast-card">
+              <div className="mon-forecast-header">
+                <div className="mon-forecast-title-group">
+                  <Clock size={18} className="mon-forecast-icon" />
+                  <div>
+                    <h4>Milestone Delivery Forecast</h4>
+                    <p>AI calculated from sprint velocity, open story points, and commit frequency.</p>
+                  </div>
                 </div>
-                <p className="faculty-monitoring-team">
-                  Team: {selectedProject.teamName}
-                </p>
+                <Badge tone={delayRisk.delayRiskLevel === 'HIGH' ? 'danger' : delayRisk.delayRiskLevel === 'MEDIUM' ? 'warning' : 'success'}>
+                  {delayRisk.delayRiskLevel === 'HIGH' ? '🔴 Critical Delay Risk' : delayRisk.delayRiskLevel === 'MEDIUM' ? '🟡 Moderate Pace Variance' : '🟢 On Schedule'}
+                </Badge>
               </div>
 
-              <Badge
-                tone={
-                  projectStatusTone[selectedProject.projectStatus] || 'neutral'
-                }
-              >
-                {selectedProject.projectStatus}
-              </Badge>
-            </div>
-
-            <div className="faculty-monitoring-progress-section">
-              <div className="faculty-monitoring-progress-header">
-                <span>Overall Progress</span>
-                <strong>{selectedProject.overallProgress}%</strong>
+              <div className="mon-forecast-stats-grid">
+                <div className="mon-forecast-stat">
+                  <span className="mon-stat-label">Target Deadline</span>
+                  <strong className="mon-stat-value">{delayRisk.targetDeadline}</strong>
+                </div>
+                <div className="mon-forecast-stat">
+                  <span className="mon-stat-label">Predicted Completion</span>
+                  <strong className="mon-stat-value" style={{ color: delayRisk.delayDays > 0 ? 'var(--warning)' : 'var(--success)' }}>
+                    {delayRisk.predictedCompletionDate} {delayRisk.delayDays > 0 ? `(+${delayRisk.delayDays}d)` : '(On Time)'}
+                  </strong>
+                </div>
+                <div className="mon-forecast-stat">
+                  <span className="mon-stat-label">Story Points Progress</span>
+                  <strong className="mon-stat-value">{delayRisk.completedPoints} / {delayRisk.plannedPoints} pts ({delayRisk.completionPercentage}%)</strong>
+                </div>
+                <div className="mon-forecast-stat">
+                  <span className="mon-stat-label">Velocity (Current vs Req.)</span>
+                  <strong className="mon-stat-value">{delayRisk.currentVelocity} vs {delayRisk.requiredVelocity} pts/wk</strong>
+                </div>
               </div>
 
-              <div className="faculty-monitoring-progress-track">
-                <div
-                  className="faculty-monitoring-progress-fill"
-                  style={{
-                    width: `${clampProgress(selectedProject.overallProgress)}%`,
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="faculty-monitoring-stats">
-              <div className="faculty-monitoring-stat">
-                <span>Total Tasks</span>
-                <strong>{selectedProject.totalTasks}</strong>
-              </div>
-
-              <div className="faculty-monitoring-stat">
-                <span>Completed</span>
-                <strong>{selectedProject.completedTasks}</strong>
-              </div>
-
-              <div className="faculty-monitoring-stat">
-                <span>In Progress</span>
-                <strong>{selectedProject.inProgressTasks}</strong>
-              </div>
-
-              <div className="faculty-monitoring-stat">
-                <span>In Review</span>
-                <strong>{selectedProject.inReviewTasks}</strong>
-              </div>
-
-              <div className="faculty-monitoring-stat">
-                <span>To Do</span>
-                <strong>{selectedProject.todoTasks}</strong>
+              <div className="mon-forecast-recommendation">
+                <p><strong>AI Recommendation for Faculty:</strong> {delayRisk.aiRecommendation}</p>
               </div>
             </div>
+          )}
 
-            <div className="faculty-monitoring-section">
-              <div className="faculty-monitoring-section-header">
-                <div>
-                  <h3>
-                    <CalendarDays size={18} />
-                    Sprint Monitoring
-                  </h3>
-                  <p>
-                    Review sprint schedules, status, workload, and progress.
-                  </p>
-                </div>
-              </div>
-
-              {(selectedProject.sprints || []).length === 0 ? (
-                <div className="faculty-monitoring-section-empty">
-                  No sprints have been created for this project.
-                </div>
-              ) : (
-                <div className="faculty-monitoring-sprint-list">
-                  {selectedProject.sprints.map((sprint) => (
-                    <div
-                      key={sprint.sprintId}
-                      className="faculty-monitoring-sprint-card"
-                    >
-                      <div className="faculty-monitoring-sprint-top">
-                        <div>
-                          <h4>{sprint.name}</h4>
-
-                          {sprint.goal && (
-                            <p className="faculty-monitoring-sprint-goal">
-                              {sprint.goal}
-                            </p>
-                          )}
-                        </div>
-
-                        <Badge
-                          tone={
-                            sprintStatusTone[sprint.status] || 'neutral'
-                          }
-                        >
-                          {sprint.status}
-                        </Badge>
-                      </div>
-
-                      <div className="faculty-monitoring-sprint-meta">
-                        <div>
-                          <span>Start</span>
-                          <strong>{formatDate(sprint.startDate)}</strong>
-                        </div>
-
-                        <div>
-                          <span>End</span>
-                          <strong>{formatDate(sprint.endDate)}</strong>
-                        </div>
-
-                        <div>
-                          <span>Tasks</span>
-                          <strong>{sprint.totalTasks}</strong>
-                        </div>
-
-                        <div>
-                          <span>Completed</span>
-                          <strong>{sprint.completedTasks}</strong>
-                        </div>
-                      </div>
-
-                      <div className="faculty-monitoring-sprint-progress">
-                        <div className="faculty-monitoring-progress-header">
-                          <span>Sprint Progress</span>
-                          <strong>{sprint.progress}%</strong>
-                        </div>
-
-                        <div className="faculty-monitoring-progress-track">
-                          <div
-                            className="faculty-monitoring-progress-fill"
-                            style={{
-                              width: `${clampProgress(sprint.progress)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="faculty-monitoring-sprint-stats">
-                        <span>
-                          To Do: <strong>{sprint.todoTasks}</strong>
-                        </span>
-                        <span>
-                          In Progress:{' '}
-                          <strong>{sprint.inProgressTasks}</strong>
-                        </span>
-                        <span>
-                          In Review: <strong>{sprint.inReviewTasks}</strong>
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+          <div className="mon-grid">
+            <div className="mon-card">
+              <h3>Individual contribution share</h3>
+              <p className="mon-hint">Share of the sprint's code volume (lines added + 0.5 × lines deleted).</p>
+              <ContributionChart metrics={metrics} />
             </div>
 
-            <div className="faculty-monitoring-section">
-              <div className="faculty-monitoring-section-header">
-                <div>
-                  <h3>
-                    <ListChecks size={18} />
-                    Task Monitoring
-                  </h3>
-                  <p>
-                    Review task assignments, priorities, statuses, and
-                    progress.
-                  </p>
-                </div>
-              </div>
-
-              {(selectedProject.tasks || []).length === 0 ? (
-                <div className="faculty-monitoring-section-empty">
-                  No tasks have been created for this project.
-                </div>
-              ) : (
-                <div className="faculty-monitoring-task-list">
-                  {selectedProject.tasks.map((task) => (
-                    <div
-                      key={task.taskId}
-                      className="faculty-monitoring-task-card"
-                    >
-                      <div className="faculty-monitoring-task-main">
-                        <div className="faculty-monitoring-task-title-row">
-                          <h4>{task.title}</h4>
-
-                          <div className="faculty-monitoring-task-badges">
-                            <Badge
-                              tone={
-                                priorityTone[task.priority] || 'neutral'
-                              }
-                            >
-                              {task.priority}
-                            </Badge>
-
-                            <Badge
-                              tone={
-                                taskStatusTone[task.status] || 'neutral'
-                              }
-                            >
-                              {task.status}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        {task.description && (
-                          <p className="faculty-monitoring-task-description">
-                            {task.description}
-                          </p>
-                        )}
-
-                        <div className="faculty-monitoring-task-meta">
-                          <div>
-                            <ListChecks size={15} />
-                            <span>
-                              Sprint:{' '}
-                              <strong>
-                                {task.sprintName || 'Unassigned'}
-                              </strong>
-                            </span>
-                          </div>
-
-                          <div>
-                            <UserCheck size={15} />
-                            <span>
-                              Assigned to:{' '}
-                              <strong>
-                                {task.assignedToName || 'Unassigned'}
-                              </strong>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="faculty-monitoring-task-progress">
-                        <div className="faculty-monitoring-progress-header">
-                          <span>Progress</span>
-                          <strong>{task.progress}%</strong>
-                        </div>
-
-                        <div className="faculty-monitoring-progress-track">
-                          <div
-                            className="faculty-monitoring-progress-fill"
-                            style={{
-                              width: `${clampProgress(task.progress)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="mon-card">
+              <h3>Sprint velocity</h3>
+              <VelocityChart sprints={sprints} />
             </div>
           </div>
+
+          {metrics.length > 0 && (
+            <div className="mon-card">
+              <h3>Per-student metrics</h3>
+              <div className="mon-table-wrap">
+                <table className="mon-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th><th>Commits</th><th>Lines +/−</th><th>Tasks done</th>
+                      <th>Consistency</th><th>Share</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {metrics.map((m) => (
+                      <tr key={m.studentUserId}>
+                        <td>{m.fullName}</td>
+                        <td>{m.totalCommits}</td>
+                        <td>+{m.linesAdded} / −{m.linesDeleted}</td>
+                        <td>{m.tasksCompleted}</td>
+                        <td>{m.consistencyScore.toFixed(2)}</td>
+                        <td>{m.contributionPercentage.toFixed(1)}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {insight && (
+            <div className="mon-grid">
+              <div className="mon-card">
+                <h3>AI executive summary</h3>
+                {insight.executiveSummary ? (
+                  insight.executiveSummary.split(/\n\s*\n/).map((para, i) => (
+                    <p key={i} className="mon-summary">{para}</p>
+                  ))
+                ) : (
+                  <p className="mon-empty">The AI summary was unavailable for this run. Risk flags below are still valid.</p>
+                )}
+                <p className="mon-meta">Generated {new Date(insight.generatedAt).toLocaleString()}</p>
+              </div>
+
+              <div className="mon-card">
+                <h3>Risk flags</h3>
+                {insight.flags.length === 0 ? (
+                  <p className="mon-empty">No anomalies detected.</p>
+                ) : (
+                  <ul className="mon-flags">
+                    {insight.flags.map((f, i) => (
+                      <li key={i}>
+                        <Badge tone={severityTone[f.severity]}>{f.severity}</Badge>
+                        <span>{f.message}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
         </>
+      )}
+
+      {rubricOpen && (
+        <div className="ai-modal-overlay" onClick={() => setRubricOpen(false)}>
+          <div className="ai-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 880 }}>
+            <div className="ai-modal-header">
+              <div className="ai-modal-header-title">
+                <Award size={20} className="ai-sparkle-icon" />
+                <h3>Automated Rubric Grading Assistant</h3>
+              </div>
+              <button type="button" className="ai-modal-close-btn" onClick={() => setRubricOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="ai-modal-body">
+              {loadingRubric ? (
+                <div style={{ padding: 40, textAlign: 'center' }}>
+                  <p className="proposal-loading">Evaluating project deliverables against academic rubrics...</p>
+                </div>
+              ) : rubricError ? (
+                <div className="proposal-save-error">{rubricError}</div>
+              ) : rubricData ? (
+                <div className="ai-draft-preview-container">
+                  <div className="ai-preview-header">
+                    <div>
+                      <span className="ai-preview-badge">✨ AI Faculty Evaluation</span>
+                      <h4 className="ai-draft-project-title">{rubricData.projectTitle} (Team {rubricData.teamName})</h4>
+                    </div>
+                    <div className="rubric-score-badge">
+                      <span className="rubric-grade-large">{rubricData.grade}</span>
+                      <span className="rubric-score-text">{rubricData.overallScore} / 100</span>
+                    </div>
+                  </div>
+
+                  <div className="ai-section-box">
+                    <h5>Executive Evaluation Summary</h5>
+                    <p>{rubricData.executiveSummary}</p>
+                  </div>
+
+                  <div className="ai-section-box">
+                    <h5>Grading Rubric Breakdown</h5>
+                    <div className="rubric-criteria-grid">
+                      {rubricData.criteria?.map((c, i) => (
+                        <div key={i} className="rubric-criterion-card">
+                          <div className="rubric-criterion-top">
+                            <strong>{c.name}</strong>
+                            <span className="rubric-awarded-pill">{c.awardedScore} / {c.maxScore} pts</span>
+                          </div>
+                          <p className="rubric-justification">{c.justification}</p>
+                          <p className="rubric-suggestion"><em>Suggestion:</em> {c.suggestions}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rubric-feedback-box">
+                    <div className="rubric-feedback-header">
+                      <h5>Suggested Faculty Feedback</h5>
+                      <Button variant="secondary" onClick={handleCopyFeedback}>
+                        {copiedFeedback ? <Check size={14} /> : <Copy size={14} />}
+                        <span style={{ marginLeft: 6 }}>{copiedFeedback ? 'Copied Feedback!' : 'Copy Feedback'}</span>
+                      </Button>
+                    </div>
+                    <p className="rubric-feedback-text">{rubricData.suggestedFacultyFeedback}</p>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="ai-modal-footer">
+              <Button variant="secondary" onClick={() => setRubricOpen(false)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {codeAuditOpen && (
+        <div className="ai-modal-overlay" onClick={() => setCodeAuditOpen(false)}>
+          <div className="ai-modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 880 }}>
+            <div className="ai-modal-header">
+              <div className="ai-modal-header-title">
+                <ShieldCheck size={20} className="ai-sparkle-icon" />
+                <h3>GitHub PR &amp; Code Quality Inspector</h3>
+              </div>
+              <button type="button" className="ai-modal-close-btn" onClick={() => setCodeAuditOpen(false)}>
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="ai-modal-body">
+              {loadingCodeAudit ? (
+                <div style={{ padding: 40, textAlign: 'center' }}>
+                  <p className="proposal-loading">Auditing commits, security rules, and role alignments...</p>
+                </div>
+              ) : codeAuditError ? (
+                <div className="proposal-save-error">{codeAuditError}</div>
+              ) : codeAuditData ? (
+                <div className="ai-draft-preview-container">
+                  <div className="ai-preview-header">
+                    <div>
+                      <span className="ai-preview-badge">🔍 Automated Repository Audit</span>
+                      <h4 className="ai-draft-project-title">{codeAuditData.projectTitle}</h4>
+                    </div>
+                    <div className="code-audit-summary-pill">
+                      <span>Code Grade: <strong>{codeAuditData.overallCodeGrade}</strong> ({codeAuditData.overallQualityScore}/100)</span>
+                    </div>
+                  </div>
+
+                  <div className="mon-forecast-stats-grid">
+                    <div className="mon-forecast-stat">
+                      <span className="mon-stat-label">Maintainability</span>
+                      <strong className="mon-stat-value">{codeAuditData.maintainabilityIndex}</strong>
+                    </div>
+                    <div className="mon-forecast-stat">
+                      <span className="mon-stat-label">Test Coverage</span>
+                      <strong className="mon-stat-value">{codeAuditData.testCoverageEstimate}</strong>
+                    </div>
+                  </div>
+
+                  <div className="ai-section-box">
+                    <h5>Student Role Alignment &amp; Verification</h5>
+                    <div className="role-alignment-table-wrapper">
+                      <table className="ai-modules-table">
+                        <thead>
+                          <tr>
+                            <th>Student</th>
+                            <th>Assigned Role</th>
+                            <th>Alignment Score</th>
+                            <th>Status</th>
+                            <th>Audit Details</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {codeAuditData.roleAlignments?.map((r, i) => (
+                            <tr key={i}>
+                              <td><strong>{r.studentName}</strong></td>
+                              <td>{r.assignedRole}</td>
+                              <td>{r.alignmentPercentage}%</td>
+                              <td>
+                                <Badge tone={r.status === 'EXCELLENT' ? 'success' : 'warning'}>{r.status}</Badge>
+                              </td>
+                              <td>{r.details}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <div className="ai-section-box">
+                    <h5>Security &amp; Vulnerability Audit</h5>
+                    <div className="vulnerability-list">
+                      {codeAuditData.securityVulnerabilities?.map((v, i) => (
+                        <div key={i} className="vulnerability-item">
+                          <div className="vulnerability-item-top">
+                            <strong>{v.title}</strong>
+                            <Badge tone={v.severity === 'HIGH' ? 'danger' : 'neutral'}>{v.severity}</Badge>
+                          </div>
+                          <p style={{ margin: '4px 0', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                            <em>Location:</em> {v.location}
+                          </p>
+                          <p style={{ margin: 0, fontSize: '13px' }}>{v.recommendation}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="ai-modal-footer">
+              <Button variant="secondary" onClick={() => setCodeAuditOpen(false)}>Close</Button>
+            </div>
+          </div>
+        </div>
       )}
     </DashboardLayout>
   )

@@ -69,6 +69,10 @@ public class Project {
         this.proposal = proposal;
     }
 
+    public String getTitle() { return name != null ? name : (proposal != null ? proposal.getTitle() : ""); }
+
+    public String getTechnologyStack() { return proposal != null ? proposal.getTechnologyStack() : "Fullstack"; }
+
     public String getName() {
         return name;
     }

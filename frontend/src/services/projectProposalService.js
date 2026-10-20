@@ -19,3 +19,12 @@ export const updateProposal = (proposalId, proposalData) =>
 // Submit a draft proposal
 export const submitProposal = (proposalId) =>
     api.post(`/proposals/${proposalId}/submit`)
+
+// Generate AI proposal draft from idea and tech stack
+export const generateAiProposalDraft = (draftRequest) =>
+    api.post('/proposals/ai-draft', draftRequest)
+
+// Generate Jira-style Sprint & Story Point Breakdown
+export const getSprintBreakdown = (proposalId) =>
+    api.get(`/proposals/${proposalId}/sprint-breakdown`)
+

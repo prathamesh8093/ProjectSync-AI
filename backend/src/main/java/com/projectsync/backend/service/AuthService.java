@@ -48,13 +48,13 @@ public class AuthService {
         User user = userService
                 .getUserByEmail(request.getEmail())
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new org.springframework.security.authentication.BadCredentialsException(
                                 "Invalid email or password"
                         )
                 );
 
-        if (!user.getIsActive()) {
-            throw new RuntimeException(
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
+            throw new com.projectsync.backend.exception.ForbiddenOperationException(
                     "User account is inactive"
             );
         }
@@ -63,7 +63,7 @@ public class AuthService {
                 request.getPassword(),
                 user.getPasswordHash())) {
 
-            throw new RuntimeException(
+            throw new org.springframework.security.authentication.BadCredentialsException(
                     "Invalid email or password"
             );
         }

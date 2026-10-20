@@ -29,7 +29,7 @@ public class UserService {
     public User registerUser(RegisterRequest request) {
 
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException(
+            throw new com.projectsync.backend.exception.ConflictException(
                     "Email is already registered"
             );
         }
@@ -37,7 +37,7 @@ public class UserService {
         String role = request.getRole().toUpperCase();
 
         if (!role.equals("STUDENT") && !role.equals("FACULTY")) {
-            throw new RuntimeException(
+            throw new com.projectsync.backend.exception.BadRequestException(
                     "Role must be STUDENT or FACULTY"
             );
         }
@@ -74,5 +74,9 @@ public class UserService {
 
     public boolean emailExists(String email) {
         return userRepository.existsByEmail(email);
+    }
+
+    public List<User> searchStudents(String query) {
+        return userRepository.searchStudents(query);
     }
 }

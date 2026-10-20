@@ -31,6 +31,7 @@ public class Sprint {
 
     @Column(name = "status", nullable = false, length = 30)
     private String status;
+    private Integer plannedPoints = 0;
 
     @Column(name = "created_at", nullable = false)
     private OffsetDateTime createdAt;
@@ -87,6 +88,9 @@ public class Sprint {
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
     }
+
+    public Integer getPlannedPoints() { return plannedPoints; }
+    public void setPlannedPoints(Integer plannedPoints) { this.plannedPoints = plannedPoints; }
 
     public String getStatus() {
         return status;
